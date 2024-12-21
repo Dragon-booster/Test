@@ -1,0 +1,326 @@
+
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+ 
+
+ENTITY TEST_01 IS
+END TEST_01;
+ 
+ARCHITECTURE behavior OF TEST_01 IS 
+ 
+ 
+    COMPONENT PRI_PW_Generator
+    port( 	        CLK 				: in std_logic ;                   
+    				ENABLE				: in std_logic ;                   
+    				pulse_out			: out std_logic ;                   
+    				RESET           	: in std_logic  );
+    END COMPONENT;
+    
+
+    COMPONENT PRI_Tracker1
+    port( 	    	CLK 				: in std_logic ; 
+    
+					pp_wr_ena			: in std_logic ;
+					pp_addra			: in std_logic_vector(7 downto 0) ;
+					pp_dina				: in std_logic_vector(79 downto 0);				
+					no_of_pulse_to_look	: in std_logic_vector(7 downto 0) ;
+					no_of_pulse_to_Jamm	: in std_logic_vector(7 downto 0) ;				  
+					Fixed_PRI	        : in std_logic ;
+--					Dwell_Switch_PRI    : in std_logic ;
+--					Stagger_PRI    		: in std_logic ;
+--					Sliding_Up_PRI		: in std_logic ;
+--					Sliding_Down_PRI	: in std_logic ;
+--					Sine_PRI			: in std_logic ;
+--					Jitter_PRI			: in std_logic ;  
+					                    
+    				ENABLE				: in std_logic ;                   
+    				pulse_in			: in std_logic ;                   
+    				RESET           	: in std_logic  );
+    END COMPONENT;
+    
+
+    COMPONENT PRI_Tracker2
+    port( 	    	CLK 				: in std_logic ; 
+    
+					pp_wr_ena			: in std_logic ;
+					pp_addra			: in std_logic_vector(7 downto 0) ;
+					pp_dina				: in std_logic_vector(79 downto 0);				
+					no_of_pulse_to_look	: in std_logic_vector(7 downto 0) ;
+					no_of_pulse_to_Jamm	: in std_logic_vector(7 downto 0) ;				  
+--					Fixed_PRI	        : in std_logic ;
+					Dwell_Switch_PRI    : in std_logic ;
+--					Stagger_PRI    		: in std_logic ;
+--					Sliding_Up_PRI		: in std_logic ;
+--					Sliding_Down_PRI	: in std_logic ;
+--					Sine_PRI			: in std_logic ;
+--					Jitter_PRI			: in std_logic ;  
+					                    
+    				ENABLE				: in std_logic ;                   
+    				pulse_in			: in std_logic ;                   
+    				RESET           	: in std_logic  );
+    END COMPONENT;
+    
+
+    COMPONENT PRI_Tracker3
+    port( 	    	CLK 				: in std_logic ; 
+    
+					pp_wr_ena			: in std_logic ;
+					pp_addra			: in std_logic_vector(7 downto 0) ;
+					pp_dina				: in std_logic_vector(79 downto 0);				
+					no_of_pulse_to_look	: in std_logic_vector(7 downto 0) ;
+					no_of_pulse_to_Jamm	: in std_logic_vector(7 downto 0) ;				  
+					stagger_level	: in std_logic_vector(7 downto 0) ;				  
+					Stagger_PRI    : in std_logic ;
+					                    
+    				ENABLE				: in std_logic ;                   
+    				pulse_in			: in std_logic ;                   
+    				RESET           	: in std_logic  );
+    END COMPONENT;
+    
+
+    COMPONENT PRI_Tracker4
+	port( 	    CLK 				: in std_logic ;                   
+    			ENABLE				: in std_logic ;                   
+    			pulse_in			: in std_logic ;
+    			no_of_pulse_to_look	: in std_logic_vector(7 downto 0) ;
+    			no_of_pulse_to_Jamm	: in std_logic_vector(7 downto 0) ;				  
+    			Sliding_Up_PRI	    : in std_logic ;
+    			Pulse_width		    : in std_logic_vector(31 downto 0) ;
+    			Max_PRI			    : in std_logic_vector(31 downto 0) ;
+    			Min_PRI			    : in std_logic_vector(31 downto 0) ;
+    			PRI_Step		    : in std_logic_vector(31 downto 0) ;				
+    			RESET           	: in std_logic  );
+    END COMPONENT;
+    
+
+    COMPONENT PRI_Tracker5
+	port( 	    CLK 				: in std_logic ;                   
+    			ENABLE				: in std_logic ;                   
+    			pulse_in			: in std_logic ;
+    			no_of_pulse_to_look	: in std_logic_vector(7 downto 0) ;
+    			no_of_pulse_to_Jamm	: in std_logic_vector(7 downto 0) ;				  
+    			Sliding_Down_PRI	: in std_logic ;
+    			Pulse_width		    : in std_logic_vector(31 downto 0) ;
+    			Max_PRI			    : in std_logic_vector(31 downto 0) ;
+    			Min_PRI			    : in std_logic_vector(31 downto 0) ;
+    			PRI_Step		    : in std_logic_vector(31 downto 0) ;				
+    			RESET           	: in std_logic  );
+    END COMPONENT;
+    
+
+   --Inputs
+   signal RESET : std_logic := '0';
+   signal ENABLE : std_logic := '0';
+   signal CLK : std_logic := '0';
+
+
+signal 	pp_wr_ena			:  std_logic ;
+signal 	Max_PRI			:  std_logic_vector(31 downto 0) ;
+signal 	Min_PRI			:  std_logic_vector(31 downto 0) ;
+signal 	PRI_Step			:  std_logic_vector(31 downto 0) ;
+signal 	Pulse_width			:  std_logic_vector(31 downto 0) ;
+signal 	pp_addra			:  std_logic_vector(7 downto 0) ;
+signal 	pp_dina				:  std_logic_vector(79 downto 0);				
+signal 	no_of_pulse_to_look	:  std_logic_vector(7 downto 0) ;
+signal 	no_of_pulse_to_Jamm	:  std_logic_vector(7 downto 0) ;				  
+signal 	stagger_level	:  std_logic_vector(7 downto 0) ;				  
+signal 	Fixed_PRI	        :  std_logic := '0';
+signal 	Dwell_Switch_PRI    :  std_logic := '0';
+signal 	Stagger_PRI    		:  std_logic := '0';
+signal 	Sliding_Up_PRI		:  std_logic := '0';
+signal 	Sliding_Down_PRI	:  std_logic := '0';
+signal 	Sine_PRI			:  std_logic := '0';
+signal 	Jitter_PRI			:  std_logic := '0';  
+
+
+
+ 	--Outputs
+   signal pulse_out : std_logic;
+
+   -- Clock period definitions
+   constant CLK_period : time := 10 ns;
+ 
+BEGIN
+ 
+	-- Instantiate the Unit Under Test (UUT)
+   uut: PRI_PW_Generator PORT MAP (
+          CLK 			=> CLK,
+          RESET 		=> RESET,
+		  ENABLE 		=> ENABLE,
+          pulse_out 	=> pulse_out   );
+
+-- Instantiate the Unit Under Test (UUT)
+--   uut2: PRI_Tracker1 PORT MAP (
+--        CLK 					=> CLK					,
+--        RESET 				=> RESET				,
+--		  ENABLE 				=> ENABLE				,
+--        pulse_in 	    		=> pulse_out			,
+--		  pp_wr_ena				=> pp_wr_ena    		,
+--        pp_addra				=> pp_addra   			,
+--        pp_dina				=> pp_dina	  			,
+--        no_of_pulse_to_look	=> no_of_pulse_to_look  ,
+--        no_of_pulse_to_Jamm	=> no_of_pulse_to_Jamm	,
+--        Fixed_PRI	        	=> Fixed_PRI   			);
+
+	 
+uut3: PRI_Tracker2 PORT MAP (
+	  CLK 					=> CLK					,
+	  RESET 				=> RESET				,
+	  ENABLE 				=> ENABLE				,
+	  pulse_in 	    		=> pulse_out			,
+	  pp_wr_ena				=> pp_wr_ena    		,
+	  pp_addra				=> pp_addra   			,
+	  pp_dina				=> pp_dina	  			,
+	  no_of_pulse_to_look	=> no_of_pulse_to_look  ,
+	  no_of_pulse_to_Jamm	=> no_of_pulse_to_Jamm	,
+	  Dwell_Switch_PRI    	=> Dwell_Switch_PRI 	);
+
+
+--uut4: PRI_Tracker3 PORT MAP (
+--	  CLK 					=> CLK					,
+--	  RESET 				=> RESET				,
+--	  ENABLE 				=> ENABLE				,
+--	  pulse_in 	    		=> pulse_out			,
+--	  pp_wr_ena				=> pp_wr_ena    		,
+--	  pp_addra				=> pp_addra   			,
+--	  pp_dina				=> pp_dina	  			,
+--	  stagger_level				=> stagger_level	  			,
+--	  no_of_pulse_to_look	=> no_of_pulse_to_look  ,
+--	  no_of_pulse_to_Jamm	=> no_of_pulse_to_Jamm	,
+--	  Stagger_PRI    		=> Stagger_PRI 			);
+	  
+	  
+--uut5: PRI_Tracker4 PORT MAP (
+--	  CLK 					=> CLK					,
+--	  RESET 				=> RESET				,
+--	  ENABLE 				=> ENABLE				,
+--	  pulse_in 	    		=> pulse_out			,
+--  	  Pulse_width 	        => Pulse_width			,
+--  	  Max_PRI 	        	=> Max_PRI				,
+--  	  Min_PRI 	        	=> Min_PRI				,
+--  	  PRI_Step				=> PRI_Step				,
+--	  no_of_pulse_to_look	=> no_of_pulse_to_look  ,
+--	  no_of_pulse_to_Jamm	=> no_of_pulse_to_Jamm	,
+--	  Sliding_Up_PRI        => Sliding_Up_PRI 		);
+	  
+--uut6: PRI_Tracker5 PORT MAP (
+--	  CLK 					=> CLK					,
+--	  RESET 				=> RESET				,
+--	  ENABLE 				=> ENABLE				,
+--	  pulse_in 	    		=> pulse_out			,
+--  	  Pulse_width 	        => Pulse_width			,
+--  	  Max_PRI 	        	=> Max_PRI				,
+--  	  Min_PRI 	        	=> Min_PRI				,
+--  	  PRI_Step				=> PRI_Step				,
+--	  no_of_pulse_to_look	=> no_of_pulse_to_look  ,
+--	  no_of_pulse_to_Jamm	=> no_of_pulse_to_Jamm	,
+--	  Sliding_Down_PRI      => Sliding_Down_PRI 		);
+	  
+
+   -- Clock process definitions
+   CLK_process :process
+   begin
+		CLK <= '1';
+		wait for CLK_period/2;
+		CLK <= '0';
+		wait for CLK_period/2;
+   end process;
+ 
+
+   -- Stimulus process
+   stim_proc: process
+   begin		
+      	RESET   				<= '1';
+      	ENABLE  				<= '0';
+      	Dwell_Switch_PRI  		<= '1';
+      	Stagger_PRI  			<= '0';
+      	Sliding_Up_PRI  		<= '0';
+      	Sliding_Down_PRI  		<= '0';
+		no_of_pulse_to_look	 	<= x"01";	
+		no_of_pulse_to_jamm	 	<= x"04";
+		Min_PRI					<= x"00009C40";
+		Max_PRI					<= x"0001174C";
+		PRI_Step    			<= x"000001F4";
+		Pulse_width    			<= x"000003E8";
+		stagger_level    		<= x"40";
+		
+		pp_wr_ena   <= '0';
+		pp_addra	<= x"00";
+		pp_dina	    <= x"00000000000000000000";
+		
+      wait for 100 ns;	
+		
+      wait for CLK_period*10;
+		RESET   <= '0';
+	  wait for CLK_period*100;	
+		ENABLE  <= '0';
+		pp_addra	<= x"00"; pp_dina	    <= x"000000009C40000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+		pp_addra	<= x"01"; pp_dina	    <= x"00000000A028000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"02"; pp_dina	    <= x"00000000A028000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"03"; pp_dina	    <= x"00000000A21C000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"04"; pp_dina	    <= x"00000000A410000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"05"; pp_dina	    <= x"00000000A604000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"06"; pp_dina	    <= x"00000000A7F8000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"07"; pp_dina	    <= x"00000000A9EC000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"08"; pp_dina	    <= x"00000000ABE0000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"09"; pp_dina	    <= x"00000000ADD4000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"0A"; pp_dina	    <= x"00000000AFC8000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"0B"; pp_dina	    <= x"00000000B1BC000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"0C"; pp_dina	    <= x"00000000B3B0000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"0D"; pp_dina	    <= x"00000000B5A4000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"0E"; pp_dina	    <= x"00000000B798000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"0F"; pp_dina	    <= x"00000000B98C000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"10"; pp_dina	    <= x"00000000BB80000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"11"; pp_dina	    <= x"00000000BD74000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"12"; pp_dina	    <= x"00000000BF68000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"13"; pp_dina	    <= x"00000000C15C000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"14"; pp_dina	    <= x"00000000C350000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"15"; pp_dina	    <= x"00000000C544000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"16"; pp_dina	    <= x"00000000C738000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"17"; pp_dina	    <= x"00000000C92C000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"18"; pp_dina	    <= x"00000000CB20000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"19"; pp_dina	    <= x"00000000CD14000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"1A"; pp_dina	    <= x"00000000CF08000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"1B"; pp_dina	    <= x"00000000D0FC000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"1C"; pp_dina	    <= x"00000000D2F0000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"1D"; pp_dina	    <= x"00000000D4E4000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"1E"; pp_dina	    <= x"00000000D6D8000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"1F"; pp_dina	    <= x"00000000D8CC000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"20"; pp_dina	    <= x"00000000DAC0000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"21"; pp_dina	    <= x"00000000DCB4000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"22"; pp_dina	    <= x"00000000DEA8000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"23"; pp_dina	    <= x"00000000E09C000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"24"; pp_dina	    <= x"00000000E290000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"25"; pp_dina	    <= x"00000000E484000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"26"; pp_dina	    <= x"00000000E678000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"27"; pp_dina	    <= x"00000000E86C000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"28"; pp_dina	    <= x"00000000EA60000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"29"; pp_dina	    <= x"00000000EC54000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"2A"; pp_dina	    <= x"00000000EE48000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"2B"; pp_dina	    <= x"00000000F03C000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"2C"; pp_dina	    <= x"00000000F230000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"2D"; pp_dina	    <= x"00000000F424000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"2E"; pp_dina	    <= x"00000000F618000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"2F"; pp_dina	    <= x"00000000F80C000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"30"; pp_dina	    <= x"00000000FA00000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"31"; pp_dina	    <= x"00000000FBF4000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"32"; pp_dina	    <= x"00000000FDE8000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"33"; pp_dina	    <= x"00000000FFDC000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"34"; pp_dina	    <= x"0000000101D0000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"35"; pp_dina	    <= x"0000000103C4000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"36"; pp_dina	    <= x"0000000105B8000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"37"; pp_dina	    <= x"0000000107AC000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"38"; pp_dina	    <= x"0000000109A0000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"39"; pp_dina	    <= x"000000010B94000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"3A"; pp_dina	    <= x"000000010D88000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"3B"; pp_dina	    <= x"000000010F7C000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"3C"; pp_dina	    <= x"000000011170000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"3D"; pp_dina	    <= x"000000011364000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"3E"; pp_dina	    <= x"000000011558000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+--		pp_addra	<= x"3F"; pp_dina	    <= x"00000001174C000003E8"; pp_wr_ena   <= '1'; wait for 10 ns; pp_wr_ena   <= '0'; wait for 10 ns;  
+	  wait for CLK_period*100;		
+		ENABLE  <= '1';		
+      wait;
+   end process;
+
+END;

@@ -1,0 +1,299 @@
+-----  Sliding_Up PRI Tracker -----
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+entity PRI_Tracker4 is
+	port( 	    CLK 				: in std_logic ;                   
+				ENABLE				: in std_logic ;                   
+				pulse_in			: in std_logic ;
+				no_of_pulse_to_look	: in std_logic_vector(7 downto 0) ;
+				no_of_pulse_to_Jamm	: in std_logic_vector(7 downto 0) ;				  
+				Sliding_Up_PRI	    : in std_logic ;
+				Pulse_width		    : in std_logic_vector(31 downto 0) ;
+				Max_PRI			    : in std_logic_vector(31 downto 0) ;
+				Min_PRI			    : in std_logic_vector(31 downto 0) ;
+				PRI_Step		    : in std_logic_vector(31 downto 0) ;				
+				RESET           	: in std_logic  );
+end PRI_Tracker4;
+
+architecture Behavioral of PRI_Tracker4 is			
+
+signal pw_cntr  : std_logic_vector(31 downto 0); 
+
+signal pw_cntr_latch1  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch2  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch3  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch4  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch5  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch6  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch7  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch8  : std_logic_vector(31 downto 0);
+ 
+signal toa_cntr_latch1  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch2  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch3  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch4  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch5  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch6  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch7  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch8  : std_logic_vector(31 downto 0);
+signal toa_cntr_latch9  : std_logic_vector(31 downto 0);
+signal toa_diff_1  : std_logic_vector(31 downto 0);
+signal toa_diff_2  : std_logic_vector(31 downto 0);
+signal toa_diff_3  : std_logic_vector(31 downto 0);
+signal toa_diff_4  : std_logic_vector(31 downto 0);
+signal toa_diff_5  : std_logic_vector(31 downto 0);
+signal toa_diff_6  : std_logic_vector(31 downto 0);
+signal toa_diff_7  : std_logic_vector(31 downto 0);
+signal toa_diff_8  : std_logic_vector(31 downto 0);
+
+ 
+signal look_pass_cntr  : std_logic_vector(7 downto 0); 
+signal jamm_pass_cntr  : std_logic_vector(7 downto 0); 
+signal toa_cntr  : std_logic_vector(31 downto 0); 
+signal cnt_a  : std_logic_vector(31 downto 0); 
+signal cnt_b  : std_logic_vector(31 downto 0);
+signal cnt_d  : std_logic_vector(31 downto 0);
+signal cnt_c  : std_logic_vector(9 downto 0) ;
+signal addra  : std_logic_vector(9 downto 0) ;
+signal douta  : std_logic_vector(63 downto 0);
+signal ena    : std_logic;
+signal preamble_pulse    : std_logic;
+signal pulse_in_1    : std_logic;
+signal pulse_in_2    : std_logic;
+
+signal fall_pulse_1		: std_logic;
+signal fall_pulse_2		: std_logic;
+signal fall_pulse_3		: std_logic;
+signal fall_pulse_4		: std_logic;
+signal fall_pulse_5		: std_logic;
+
+signal pp_rd_ena    : std_logic;
+signal pp_addrb    : std_logic_vector(7 downto 0);
+signal pp_doutb    : std_logic_vector(71 downto 0);
+signal req_pri    : std_logic_vector(31 downto 0);
+signal req_pw    : std_logic_vector(31 downto 0);
+
+COMPONENT PRI_PW_Store
+  PORT (
+    clka : IN STD_LOGIC;
+    ena : IN STD_LOGIC;
+    wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+    addra : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+    dina : IN STD_LOGIC_VECTOR(63 DOWNTO 0);
+    clkb : IN STD_LOGIC;
+    enb : IN STD_LOGIC;
+    addrb : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+    doutb : OUT STD_LOGIC_VECTOR(63 DOWNTO 0)
+  );
+END COMPONENT;
+
+ 
+COMPONENT pgen_vhdl
+PORT(
+	din : IN std_logic;
+	clk : IN std_logic;          
+	dout : OUT std_logic
+	);
+END COMPONENT;
+
+	
+ 
+ 
+type state_type is ( st1,st2,st3);
+signal nextstate : state_type;
+
+begin
+
+
+
+process(clk)
+begin
+if(rising_edge(clk))then
+	if(reset = '1')then
+		toa_cntr   <= x"00000000";
+	else
+		toa_cntr   <= toa_cntr + '1';
+	end if;		 
+end if;
+end process;
+		 
+
+process(clk)
+begin
+if(rising_edge(clk))then
+	pulse_in_1  <= pulse_in;
+	pulse_in_2  <= pulse_in_1;
+end if;
+end process;
+
+
+pgen_vhdl1: pgen_vhdl PORT MAP(
+	din => not pulse_in,
+	clk => clk,
+	dout => fall_pulse_1
+);
+
+
+process(clk)
+begin
+if(rising_edge(clk))then
+	fall_pulse_2 <= fall_pulse_1;
+	fall_pulse_3 <= fall_pulse_2;
+	fall_pulse_4 <= fall_pulse_3;	
+end if;
+end process;	
+
+	
+
+process(clk)
+begin
+if(rising_edge(clk))then
+		toa_diff_1      <= toa_cntr_latch1 - toa_cntr_latch2; 
+		toa_diff_2      <= toa_cntr_latch2 - toa_cntr_latch3; 
+		toa_diff_3      <= toa_cntr_latch3 - toa_cntr_latch4; 
+		toa_diff_4      <= toa_cntr_latch4 - toa_cntr_latch5; 
+		toa_diff_5      <= toa_cntr_latch5 - toa_cntr_latch6; 
+		toa_diff_6      <= toa_cntr_latch6 - toa_cntr_latch7; 
+		toa_diff_7      <= toa_cntr_latch7 - toa_cntr_latch8; 
+		toa_diff_8      <= toa_cntr_latch8 - toa_cntr_latch9;		
+	if(reset = '1')then
+		toa_cntr_latch1 <= x"00000000";
+		toa_cntr_latch2 <= x"00000000";
+		toa_cntr_latch3 <= x"00000000";
+		toa_cntr_latch4 <= x"00000000";
+		toa_cntr_latch5 <= x"00000000";
+		toa_cntr_latch6 <= x"00000000";
+		toa_cntr_latch7 <= x"00000000";
+		toa_cntr_latch8 <= x"00000000";			
+		toa_cntr_latch9 <= x"00000000";			
+	elsif(pulse_in_2 = '0' and pulse_in_1 = '1')then
+		toa_cntr_latch1 <= toa_cntr;
+		toa_cntr_latch2 <= toa_cntr_latch1;
+		toa_cntr_latch3 <= toa_cntr_latch2;
+		toa_cntr_latch4 <= toa_cntr_latch3;
+		toa_cntr_latch5 <= toa_cntr_latch4;
+		toa_cntr_latch6 <= toa_cntr_latch5;
+		toa_cntr_latch7 <= toa_cntr_latch6;
+		toa_cntr_latch8 <= toa_cntr_latch7;
+		toa_cntr_latch9 <= toa_cntr_latch8;		 
+	end if;		
+end if;
+end process;		
+
+process(clk)
+begin
+if(rising_edge(clk))then
+	if(reset = '1')then
+		pw_cntr 		<= x"00000000";
+		pw_cntr_latch1 	<= x"00000000";
+		pw_cntr_latch2 	<= x"00000000";
+		pw_cntr_latch3 	<= x"00000000";
+		pw_cntr_latch4 	<= x"00000000";
+		pw_cntr_latch5 	<= x"00000000";
+		pw_cntr_latch6 	<= x"00000000";
+		pw_cntr_latch7 	<= x"00000000";
+		pw_cntr_latch8 	<= x"00000000";		
+	elsif(pulse_in_2 = '0' and pulse_in_1 = '1')then
+		pw_cntr <= x"00000000";
+	elsif(pulse_in_2 = '1' and pulse_in_1 = '0')then
+		pw_cntr_latch1 <= pw_cntr;
+		pw_cntr_latch2 <= pw_cntr_latch1;
+		pw_cntr_latch3 <= pw_cntr_latch2;
+		pw_cntr_latch4 <= pw_cntr_latch3;
+		pw_cntr_latch5 <= pw_cntr_latch4;
+		pw_cntr_latch6 <= pw_cntr_latch5;
+		pw_cntr_latch7 <= pw_cntr_latch6;
+		pw_cntr_latch8 <= pw_cntr_latch7;
+	elsif(pulse_in_2 = '1')then
+		pw_cntr    <= pw_cntr + '1';
+	end if;		
+end if;		
+end process;
+
+
+
+process( CLK,RESET,nextstate )
+  begin
+   if ( RESET = '1') then		
+		nextstate 		<= st1;
+		cnt_a 			<= (others => '0') ; 			
+		cnt_b 			<= (others => '0') ; 
+		cnt_c 			<= (others => '0') ; 
+		cnt_d 			<= (others => '0') ; 
+   elsif (CLK' event and CLK = '1') then
+   case nextstate is			  
+					
+     when st1 =>
+	  			   cnt_a 			<= (others => '0') ; 			
+				   cnt_b 			<= (others => '0') ; 
+				   cnt_c 			<= (others => '0') ; 
+				   cnt_d 			<= (others => '0') ; 
+				   look_pass_cntr 			<= (others => '0') ; 
+				   jamm_pass_cntr 			<= (others => '0') ; 
+				   
+				   preamble_pulse   <= '0' ;   
+   					
+					if( ENABLE = '1' and Sliding_Up_PRI = '1') then
+						nextstate 		<= st2 ;
+					end if ;				
+						
+	 when st2 =>	 
+	 				cnt_a 		<= cnt_a + '1'; 	
+	 				pp_rd_ena   <= '0';			
+
+	 				
+	 				if(fall_pulse_4 = '1')then
+	 					if(pw_cntr_latch1 > (Pulse_width - x"64") and pw_cntr_latch1 < (Pulse_width + x"64"))then
+	 						if(toa_diff_1 > (Min_PRI - x"64") and toa_diff_1 < (Max_PRI + x"64"))then
+	 							look_pass_cntr <= look_pass_cntr + '1';
+	 							req_pri		   <= toa_diff_1 +  PRI_Step;
+	 							req_pw		   <= Pulse_width;	 							
+	 						end if;
+						end if;
+					end if;
+	 					
+					if(cnt_a(19) = '1')then
+						nextstate <= st1 ;
+					elsif(look_pass_cntr  = no_of_pulse_to_look)then	 
+						nextstate <= st3 ;	
+					end if;										
+	 					
+	 					
+	 				
+     when st3 =>
+     				
+	  			   cnt_a 			<= (others => '0') ; 			
+				   
+				   if(cnt_b = (req_pri - '1'))then
+				   		cnt_b 	<= x"00000000";
+						req_pri		   <= req_pri +  PRI_Step;
+				   		req_pw		   <= Pulse_width;
+				   else				    
+				   		cnt_b 	<= cnt_b + '1';
+				   end if;				   		 
+				   
+   					
+					if( cnt_b = req_pri - req_pw - x"64") then
+						preamble_pulse   <= '1' ;
+					elsif(cnt_d = req_pw + x"C8")then
+						preamble_pulse   <= '0' ;
+						cnt_d			 <= x"00000000";
+						jamm_pass_cntr	 <= jamm_pass_cntr + '1';
+					elsif(preamble_pulse = '1' ) then
+						cnt_d 			 <= cnt_d + '1';
+					end if;	   
+					
+   					
+					if(jamm_pass_cntr = no_of_pulse_to_Jamm ) then
+						nextstate <= st1 ;
+					end if ;	
+	 				
+	end case ;
+  end if;
+end process;
+
+end;	

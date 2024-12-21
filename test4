@@ -1,0 +1,1422 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_unsigned.ALL;
+use IEEE.std_logic_arith.ALL;
+
+library UNISIM;
+use UNISIM.VComponents.all;
+
+entity RX_scenario_management is
+generic(width       : integer := 7);
+Port(   clk                 : in std_logic;
+        adc_clk             : in std_logic;
+        rst                 : in std_logic;
+        adc_data1           : in std_logic_vector(159 downto 0);
+        adc_data2           : in std_logic_vector(159 downto 0);
+        adc_data3           : in std_logic_vector(159 downto 0);
+        adc_data4           : in std_logic_vector(159 downto 0);
+        E1_fir_rst          : in std_logic;
+        EM1_trig            : in std_logic;
+        EM1_freq_sw         : in std_logic_vector(7 downto 0);
+        EM1_lo_ftw          : in std_logic_vector(31 downto 0);
+        EM1_ddc_freq        : in std_logic_vector(319 downto 0);
+        EM1_priorty         : in std_logic_vector(width downto 0);
+        EM1_ddc_data        : out std_logic_vector(31 downto 0);
+        EM1_lock_status     : out std_logic;
+        E2_fir_rst          : in std_logic;
+        EM2_trig            : in std_logic;
+        EM2_freq_sw         : in std_logic_vector(7 downto 0);
+        EM2_lo_ftw          : in std_logic_vector(31 downto 0);
+        EM2_ddc_freq        : in std_logic_vector(319 downto 0);
+        EM2_priorty         : in std_logic_vector(width downto 0);
+        EM2_ddc_data        : out std_logic_vector(31 downto 0);
+        EM2_lock_status     : out std_logic;
+        E3_fir_rst          : in std_logic;
+        EM3_trig            : in std_logic;
+        EM3_freq_sw         : in std_logic_vector(7 downto 0);
+        EM3_lo_ftw          : in std_logic_vector(31 downto 0);
+        EM3_ddc_freq        : in std_logic_vector(319 downto 0);
+        EM3_priorty         : in std_logic_vector(width downto 0);
+        EM3_ddc_data        : out std_logic_vector(31 downto 0);
+        EM3_lock_status     : out std_logic;
+        E4_fir_rst          : in std_logic;
+        EM4_trig            : in std_logic;
+        EM4_freq_sw         : in std_logic_vector(7 downto 0);
+        EM4_lo_ftw          : in std_logic_vector(31 downto 0);
+        EM4_ddc_freq        : in std_logic_vector(319 downto 0);
+        EM4_priorty         : in std_logic_vector(width downto 0);
+        EM4_ddc_data        : out std_logic_vector(31 downto 0);
+        EM4_lock_status     : out std_logic;
+        EM5_trig            : in std_logic;
+        E5_fir_rst          : in std_logic;
+        EM5_freq_sw         : in std_logic_vector(7 downto 0);
+        EM5_lo_ftw          : in std_logic_vector(31 downto 0);
+        EM5_ddc_freq        : in std_logic_vector(319 downto 0);
+        EM5_priorty         : in std_logic_vector(width downto 0);
+        EM5_ddc_data        : out std_logic_vector(31 downto 0);
+        EM5_lock_status     : out std_logic;
+        E6_fir_rst          : in std_logic;
+        EM6_trig            : in std_logic;
+        EM6_freq_sw         : in std_logic_vector(7 downto 0);
+        EM6_lo_ftw          : in std_logic_vector(31 downto 0);
+        EM6_ddc_freq        : in std_logic_vector(319 downto 0);
+        EM6_priorty         : in std_logic_vector(width downto 0);
+        EM6_ddc_data        : out std_logic_vector(31 downto 0);
+        EM6_lock_status     : out std_logic;
+        E7_fir_rst          : in std_logic;
+        EM7_trig            : in std_logic;
+        EM7_freq_sw         : in std_logic_vector(7 downto 0);
+        EM7_lo_ftw          : in std_logic_vector(31 downto 0);
+        EM7_ddc_freq        : in std_logic_vector(319 downto 0);
+        EM7_priorty         : in std_logic_vector(width downto 0);
+        EM7_ddc_data        : out std_logic_vector(31 downto 0);
+        EM7_lock_status     : out std_logic;
+        E8_fir_rst          : in std_logic;
+        EM8_trig            : in std_logic;
+        EM8_freq_sw         : in std_logic_vector(7 downto 0);
+        EM8_lo_ftw          : in std_logic_vector(31 downto 0);
+        EM8_ddc_freq        : in std_logic_vector(319 downto 0);
+        EM8_priorty         : in std_logic_vector(width downto 0);
+        EM8_ddc_data        : out std_logic_vector(31 downto 0);
+        EM8_lock_status     : out std_logic;
+        E9_fir_rst          : in std_logic;
+        EM9_trig            : in std_logic;
+        EM9_freq_sw         : in std_logic_vector(7 downto 0);
+        EM9_lo_ftw          : in std_logic_vector(31 downto 0);
+        EM9_ddc_freq        : in std_logic_vector(319 downto 0);
+        EM9_priorty         : in std_logic_vector(width downto 0);
+        EM9_ddc_data        : out std_logic_vector(31 downto 0);
+        EM9_lock_status     : out std_logic;
+        E10_fir_rst         : in std_logic;
+        EM10_trig           : in std_logic;
+        EM10_freq_sw        : in std_logic_vector(7 downto 0);
+        EM10_lo_ftw         : in std_logic_vector(31 downto 0);
+        EM10_ddc_freq       : in std_logic_vector(319 downto 0);
+        EM10_priorty        : in std_logic_vector(width downto 0);
+        EM10_ddc_data       : out std_logic_vector(31 downto 0);
+        EM10_lock_status    : out std_logic;
+        E11_fir_rst         : in std_logic;
+        EM11_trig           : in std_logic;
+        EM11_freq_sw        : in std_logic_vector(7 downto 0);
+        EM11_lo_ftw         : in std_logic_vector(31 downto 0);
+        EM11_ddc_freq       : in std_logic_vector(319 downto 0);
+        EM11_priorty        : in std_logic_vector(width downto 0);
+        EM11_ddc_data       : out std_logic_vector(31 downto 0);
+        EM11_lock_status    : out std_logic;
+        E12_fir_rst         : in std_logic;
+        EM12_trig           : in std_logic;
+        EM12_freq_sw        : in std_logic_vector(7 downto 0);
+        EM12_lo_ftw         : in std_logic_vector(31 downto 0);
+        EM12_ddc_freq       : in std_logic_vector(319 downto 0);
+        EM12_priorty        : in std_logic_vector(width downto 0);
+        EM12_ddc_data       : out std_logic_vector(31 downto 0);
+        EM12_lock_status    : out std_logic;
+        E13_fir_rst         : in std_logic;
+        EM13_trig           : in std_logic;
+        EM13_freq_sw        : in std_logic_vector(7 downto 0);
+        EM13_lo_ftw         : in std_logic_vector(31 downto 0);
+        EM13_ddc_freq       : in std_logic_vector(319 downto 0);
+        EM13_priorty        : in std_logic_vector(width downto 0);
+        EM13_ddc_data       : out std_logic_vector(31 downto 0);
+        EM13_lock_status    : out std_logic;
+        E14_fir_rst         : in std_logic;
+        EM14_trig           : in std_logic;
+        EM14_freq_sw        : in std_logic_vector(7 downto 0);
+        EM14_lo_ftw         : in std_logic_vector(31 downto 0);
+        EM14_ddc_freq       : in std_logic_vector(319 downto 0);
+        EM14_priorty        : in std_logic_vector(width downto 0);
+        EM14_ddc_data       : out std_logic_vector(31 downto 0);
+        EM14_lock_status    : out std_logic;
+        E15_fir_rst         : in std_logic;
+        EM15_trig           : in std_logic;
+        EM15_freq_sw        : in std_logic_vector(7 downto 0);
+        EM15_lo_ftw         : in std_logic_vector(31 downto 0);
+        EM15_ddc_freq       : in std_logic_vector(319 downto 0);
+        EM15_priorty        : in std_logic_vector(width downto 0);
+        EM15_ddc_data       : out std_logic_vector(31 downto 0);
+        EM15_lock_status    : out std_logic;
+        E16_fir_rst         : in std_logic;
+        EM16_trig           : in std_logic;
+        EM16_freq_sw        : in std_logic_vector(7 downto 0);
+        EM16_lo_ftw         : in std_logic_vector(31 downto 0);
+        EM16_ddc_freq       : in std_logic_vector(319 downto 0);
+        EM16_priorty        : in std_logic_vector(width downto 0);
+        EM16_ddc_data       : out std_logic_vector(31 downto 0);
+        EM16_lock_status    : out std_logic;
+        LO1_ftw             : out std_logic_vector(31 downto 0);
+        LO2_ftw             : out std_logic_vector(31 downto 0);
+        LO3_ftw             : out std_logic_vector(31 downto 0);
+        LO4_ftw             : out std_logic_vector(31 downto 0);
+        lo_ftw_en1          : out std_logic;
+        lo_ftw_en2          : out std_logic;
+        lo_ftw_en3          : out std_logic;
+        lo_ftw_en4          : out std_logic;
+        module_sel_sw       : out std_logic_vector(3 downto 0);  
+        freq_sw             : out std_logic_vector(7 downto 0);
+        rx_priority_out     : out std_logic_vector(width downto 0);
+        rx_vlaid_out        : out std_logic;    
+        jesd_jamm_data      : out std_logic_vector(7 downto 0);   
+        trig_en_o           : out std_logic;     
+        jesd_jamm_data_vld  : out std_logic 
+     );
+end RX_scenario_management;
+
+architecture Behavioral of RX_scenario_management is
+
+component pul_gen
+port( 
+  clk  : in  std_logic;
+  din  : in  std_logic;
+  dout : out std_logic
+);
+end component;
+
+component priority_encoder
+Port(   rst             : in std_logic;
+        clk             : in std_logic;
+        encoder_no      : in std_logic_vector(1 downto 0);
+        trig_1          : in std_logic;
+        priorty_1       : in std_logic_vector(9 downto 0);      
+        trig_2          : in std_logic;
+        priorty_2       : in std_logic_vector(9 downto 0);
+        trig_3          : in std_logic;
+        priorty_3       : in std_logic_vector(9 downto 0);
+        trig_4          : in std_logic;
+        priorty_4       : in std_logic_vector(9 downto 0);
+        channel_no1     : out std_logic_vector(3 downto 0);     
+        trig_pri1       : out std_logic;
+        channel_no2     : out std_logic_vector(3 downto 0);     
+        trig_pri2       : out std_logic
+    );
+end component;
+
+component priority_encoder2 
+Port(   clk         : in std_logic;
+        rst         : in std_logic;
+        trig1       : in std_logic;
+        ch_no1      : in std_logic_vector(5 downto 0);     -- channle_no(1:0) encoderno(3:2) sub_cahnnel(5:4)
+        trig2       : in std_logic;
+        ch_no2      : in std_logic_vector(5 downto 0);
+        trig3       : in std_logic;
+        ch_no3      : in std_logic_vector(5 downto 0);
+        trig4       : in std_logic;
+        ch_no4      : in std_logic_vector(5 downto 0);
+        trig5       : in std_logic;
+        ch_no5      : in std_logic_vector(5 downto 0);
+        trig6       : in std_logic;
+        ch_no6      : in std_logic_vector(5 downto 0);
+        trig7       : in std_logic;
+        ch_no7      : in std_logic_vector(5 downto 0);
+        trig8       : in std_logic;
+        ch_no8      : in std_logic_vector(5 downto 0);
+        lo_trig1    : out std_logic;
+        lo_ch_no1   : out std_logic_vector(5 downto 0);
+        lo_trig2    : out std_logic;
+        lo_ch_no2   : out std_logic_vector(5 downto 0);
+        lo_trig3    : out std_logic;
+        lo_ch_no3   : out std_logic_vector(5 downto 0);
+        lo_trig4    : out std_logic;
+        lo_ch_no4   : out std_logic_vector(5 downto 0);
+        trig_en_o       : out std_logic;   
+        module_sel_sw   : out std_logic_vector(3 downto 0)
+    );
+end component;
+
+component  DDC_module is
+Port (
+      clk_60mhz         : in std_logic;
+      adc_clk           : in std_logic;
+      rst               : in std_logic;
+      ftw_vld           : in std_logic;
+      adc_data_i        : in std_logic_vector(159 downto 0);
+--      DDC_FTW           : in std_logic_vector(31 downto 0);
+      prog_full_thresh  : in std_logic_vector(8 downto 0);
+      dds_sin_out       : in std_logic_vector(159 downto 0);   
+      dds_cos_out       : in std_logic_vector(159 downto 0);   
+      
+      adc_dec_i         : out std_logic_vector(15 downto 0);
+      adc_dec_q         : out std_logic_vector(15 downto 0)
+--      fir_rst_o         : out std_logic;
+      
+--      sin_out       	: out std_logic_vector(159 downto 0);
+--	  cos_out 	        : out std_logic_vector(159 downto 0)
+     );
+end component;
+
+type state is (idle,mode1,mode2,mode3,mode4);
+signal n_s  : state;
+signal mod_sel_en           : std_logic := '0';
+signal module_cnt           : std_logic_vector(4 downto 0)  := (others =>'0');
+signal pe1_channel_no1      : std_logic_vector(3 downto 0)  := (others =>'0');
+signal pe1_trig1            : std_logic := '0';
+signal pe2_channel_no1      : std_logic_vector(3 downto 0)  := (others =>'0');
+signal pe2_trig1            : std_logic := '0';
+signal pe3_channel_no1      : std_logic_vector(3 downto 0)  := (others =>'0');
+signal pe3_trig1            : std_logic := '0';
+signal pe4_channel_no1      : std_logic_vector(3 downto 0)  := (others =>'0');
+signal pe4_trig1            : std_logic := '0';
+signal pe1_channel_no2      : std_logic_vector(3 downto 0)  := (others =>'0');
+signal pe1_trig2            : std_logic := '0';
+signal pe2_channel_no2      : std_logic_vector(3 downto 0)  := (others =>'0');
+signal pe2_trig2            : std_logic := '0';
+signal pe3_channel_no2      : std_logic_vector(3 downto 0)  := (others =>'0');
+signal pe3_trig2            : std_logic := '0';
+signal pe4_channel_no2      : std_logic_vector(3 downto 0)  := (others =>'0');
+signal pe4_trig2            : std_logic := '0';
+signal lo1_freq_sw          : std_logic_vector(7 downto 0)  := (others =>'0');
+signal lo1_ddc_freq         : std_logic_vector(319 downto 0) := (others =>'0');
+signal lo2_freq_sw          : std_logic_vector(7 downto 0)  := (others =>'0');
+signal lo2_ddc_freq         : std_logic_vector(319 downto 0) := (others =>'0');
+signal lo3_freq_sw          : std_logic_vector(7 downto 0)  := (others =>'0');
+signal lo3_ddc_freq         : std_logic_vector(319 downto 0) := (others =>'0');
+signal lo4_freq_sw          : std_logic_vector(7 downto 0)  := (others =>'0');
+signal lo4_ddc_freq         : std_logic_vector(319 downto 0) := (others =>'0');
+signal lo_trig1             : std_logic := '0';
+signal lo_trig1_pul         : std_logic := '0';
+signal dds_fir_rst1         : std_logic := '0';
+signal lo_ch_no1            : std_logic_vector(5 downto 0) := (others =>'0');
+signal lo_trig2             : std_logic := '0';
+signal lo_trig2_pul         : std_logic := '0';
+signal dds_fir_rst2         : std_logic := '0';
+signal lo_ch_no2            : std_logic_vector(5 downto 0) := (others =>'0');
+signal lo_trig3             : std_logic := '0';
+signal lo_trig3_pul         : std_logic := '0';
+signal dds_fir_rst3         : std_logic := '0';
+signal lo_ch_no3            : std_logic_vector(5 downto 0) := (others =>'0');
+signal lo_trig4             : std_logic := '0';
+signal lo_trig4_pul         : std_logic := '0';
+signal dds_fir_rst4         : std_logic := '0';
+signal lo_ch_no4            : std_logic_vector(5 downto 0) := (others =>'0');
+signal module_sel           : std_logic_vector(3 downto 0) := (others =>'0');
+signal adc_dec_i1           : std_logic_vector(15 downto 0);
+signal adc_dec_q1           : std_logic_vector(15 downto 0);
+signal adc_dec_i2           : std_logic_vector(15 downto 0);
+signal adc_dec_q2           : std_logic_vector(15 downto 0);
+signal adc_dec_i3           : std_logic_vector(15 downto 0);
+signal adc_dec_q3           : std_logic_vector(15 downto 0);
+signal adc_dec_i4           : std_logic_vector(15 downto 0);
+signal adc_dec_q4           : std_logic_vector(15 downto 0);
+
+attribute mark_debug : string;
+attribute mark_debug of freq_sw : signal is "true";
+attribute mark_debug of module_sel_sw : signal is "true";
+attribute mark_debug of lo1_freq_sw : signal is "true";
+attribute mark_debug of lo2_freq_sw : signal is "true";
+attribute mark_debug of lo3_freq_sw : signal is "true";
+attribute mark_debug of lo4_freq_sw : signal is "true";
+attribute mark_debug of LO1_ftw    : signal is "true";
+attribute mark_debug of LO2_ftw    : signal is "true";
+attribute mark_debug of LO3_ftw    : signal is "true";
+attribute mark_debug of LO4_ftw    : signal is "true";
+attribute mark_debug of lo_ftw_en1 : signal is "true";
+attribute mark_debug of lo_ftw_en2 : signal is "true";
+attribute mark_debug of lo_ftw_en3 : signal is "true";
+attribute mark_debug of lo_ftw_en4 : signal is "true";
+attribute mark_debug of adc_dec_i1 : signal is "true";
+attribute mark_debug of adc_dec_q1 : signal is "true";
+attribute mark_debug of EM1_lock_status : signal is "true";
+attribute mark_debug of EM2_lock_status : signal is "true";
+attribute mark_debug of dds_fir_rst1 : signal is "true";
+attribute mark_debug of adc_dec_i2 : signal is "true";
+attribute mark_debug of adc_dec_q2 : signal is "true";
+attribute mark_debug of adc_dec_i3 : signal is "true";
+attribute mark_debug of adc_dec_q3 : signal is "true";
+attribute mark_debug of adc_dec_i4 : signal is "true";
+attribute mark_debug of adc_dec_q4 : signal is "true";
+
+begin
+
+p_E_1 : priority_encoder
+Port map(   
+        rst             => rst,
+        clk             => clk,
+        encoder_no      => "00",
+        trig_1          => EM1_trig,
+        priorty_1       => "00" & EM1_priorty,
+        trig_2          => EM5_trig,          
+        priorty_2       => "01" & EM5_priorty,
+        trig_3          => EM12_trig,          
+        priorty_3       => "10" & EM12_priorty,
+        trig_4          => EM16_trig,          
+        priorty_4       => "11" & EM16_priorty,
+        channel_no1     => pe1_channel_no1,
+        trig_pri1       => pe1_trig1, 
+        channel_no2     => pe1_channel_no2,
+        trig_pri2       => pe1_trig2      
+        );
+        
+p_E_2 : priority_encoder
+Port map(   
+        rst             => rst,
+        clk             => clk,
+        encoder_no      => "01",
+        trig_1          => EM2_trig,
+        priorty_1       => "00" & EM2_priorty,
+        trig_2          => EM6_trig,          
+        priorty_2       => "01" & EM6_priorty,
+        trig_3          => EM11_trig,          
+        priorty_3       => "10" & EM11_priorty,
+        trig_4          => EM15_trig,          
+        priorty_4       => "11" & EM15_priorty,
+        channel_no1     => pe2_channel_no1,
+        trig_pri1       => pe2_trig1, 
+        channel_no2     => pe2_channel_no2,
+        trig_pri2       => pe2_trig2
+        );
+      
+p_E_3 : priority_encoder
+Port map(   
+        rst             => rst,
+        clk             => clk,
+        encoder_no      => "10",
+        trig_1          => EM3_trig,
+        priorty_1       => "00" & EM3_priorty,
+        trig_2          => EM7_trig,          
+        priorty_2       => "01" & EM7_priorty,
+        trig_3          => EM10_trig,          
+        priorty_3       => "10" & EM10_priorty,
+        trig_4          => EM14_trig,          
+        priorty_4       => "11" & EM14_priorty,
+        channel_no1     => pe3_channel_no1,
+        trig_pri1       => pe3_trig1, 
+        channel_no2     => pe3_channel_no2,
+        trig_pri2       => pe3_trig2
+        );
+
+p_E_4 : priority_encoder
+Port map(   
+        rst             => rst,
+        clk             => clk,
+        encoder_no      => "11",
+        trig_1          => EM4_trig,
+        priorty_1       => "00" & EM4_priorty,
+        trig_2          => EM8_trig,          
+        priorty_2       => "01" & EM8_priorty,
+        trig_3          => EM9_trig,          
+        priorty_3       => "10" & EM9_priorty,
+        trig_4          => EM13_trig,          
+        priorty_4       => "11" & EM13_priorty,
+        channel_no1     => pe4_channel_no1,
+        trig_pri1       => pe4_trig1, 
+        channel_no2     => pe4_channel_no2,
+        trig_pri2       => pe4_trig2
+        );
+
+inst_priority_encoder2 : priority_encoder2 
+Port map(   
+        clk         => clk,
+        rst         => rst,
+        trig1       => pe1_trig1,  
+        ch_no1      => "00" & pe1_channel_no1,        
+        trig2       => pe1_trig2,              
+        ch_no2      => "01" & pe1_channel_no2, 
+        trig3       => pe2_trig1,             
+        ch_no3      => "00" & pe2_channel_no1,
+        trig4       => pe2_trig2,             
+        ch_no4      => "01" & pe2_channel_no2,
+        trig5       => pe3_trig1,             
+        ch_no5      => "00" & pe3_channel_no1,
+        trig6       => pe3_trig2,             
+        ch_no6      => "01" & pe3_channel_no2,
+        trig7       => pe4_trig1,             
+        ch_no7      => "00" & pe4_channel_no1,
+        trig8       => pe4_trig2,             
+        ch_no8      => "01" & pe4_channel_no2,
+        lo_trig1    => lo_trig4,
+        lo_ch_no1   => lo_ch_no4,
+        lo_trig2    => lo_trig1,
+        lo_ch_no2   => lo_ch_no1,
+        lo_trig3    => lo_trig2,
+        lo_ch_no3   => lo_ch_no2,
+        lo_trig4    => lo_trig3,
+        lo_ch_no4   => lo_ch_no3,
+        trig_en_o   => trig_en_o,
+        module_sel_sw   => module_sel
+    );
+
+process(adc_clk)
+begin
+if(rising_edge(adc_clk)) then
+if(rst = '1') then
+    lo1_freq_sw         <= (others =>'0');
+    lo1_ddc_freq        <= (others =>'0');
+    lo1_ftw             <= (others =>'0');
+    lo_ftw_en1          <= '0';
+    dds_fir_rst1        <= '0';
+elsif(lo_trig1 = '1') then
+    case lo_ch_no1(3 downto 0) is
+        when "0000" =>  lo1_freq_sw         <= EM1_freq_sw;
+                        lo1_ddc_freq        <= EM1_ddc_freq;
+                        lo1_ftw             <= EM1_lo_ftw ; 
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E1_fir_rst;
+        when "0001" =>  lo1_freq_sw         <= EM5_freq_sw;
+                        lo1_ddc_freq        <= EM5_ddc_freq;
+                        lo1_ftw             <= EM5_lo_ftw ;
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E5_fir_rst;
+        when "0010" =>  lo1_freq_sw         <= EM12_freq_sw;
+                        lo1_ddc_freq        <= EM12_ddc_freq;
+                        lo1_ftw             <= EM12_lo_ftw ;
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E12_fir_rst;
+        when "0011" =>  lo1_freq_sw         <= EM16_freq_sw;
+                        lo1_ddc_freq        <= EM16_ddc_freq;
+                        lo1_ftw             <= EM16_lo_ftw ;
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E16_fir_rst;
+        when "0100" =>  lo1_freq_sw         <= EM2_freq_sw;
+                        lo1_ddc_freq        <= EM2_ddc_freq;
+                        lo1_ftw             <= EM2_lo_ftw ;
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E2_fir_rst;
+        when "0101" =>  lo1_freq_sw         <= EM6_freq_sw;
+                        lo1_ddc_freq        <= EM6_ddc_freq;
+                        lo1_ftw             <= EM6_lo_ftw ;
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E6_fir_rst;
+        when "0110" =>  lo1_freq_sw         <= EM11_freq_sw;
+                        lo1_ddc_freq        <= EM11_ddc_freq;
+                        lo1_ftw             <= EM11_lo_ftw ;
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E11_fir_rst;
+        when "0111" =>  lo1_freq_sw         <= EM15_freq_sw;
+                        lo1_ddc_freq        <= EM15_ddc_freq;
+                        lo1_ftw             <= EM15_lo_ftw ;
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E15_fir_rst;
+        when "1000" =>  lo1_freq_sw         <= EM3_freq_sw;
+                        lo1_ddc_freq        <= EM3_ddc_freq;
+                        lo1_ftw             <= EM3_lo_ftw ;
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E3_fir_rst;
+        when "1001" =>  lo1_freq_sw         <= EM7_freq_sw;
+                        lo1_ddc_freq        <= EM7_ddc_freq;
+                        lo1_ftw             <= EM7_lo_ftw ;
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E7_fir_rst;
+        when "1010" =>  lo1_freq_sw         <= EM10_freq_sw;
+                        lo1_ddc_freq        <= EM10_ddc_freq;
+                        lo1_ftw             <= EM10_lo_ftw ;
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E10_fir_rst;
+        when "1011" =>  lo1_freq_sw         <= EM14_freq_sw;
+                        lo1_ddc_freq        <= EM14_ddc_freq;
+                        lo1_ftw             <= EM14_lo_ftw ;
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E14_fir_rst; 
+        when "1100" =>  lo1_freq_sw         <= EM4_freq_sw;
+                        lo1_ddc_freq        <= EM4_ddc_freq;
+                        lo1_ftw             <= EM4_lo_ftw ;
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E4_fir_rst;
+        when "1101" =>  lo1_freq_sw         <= EM8_freq_sw;
+                        lo1_ddc_freq        <= EM8_ddc_freq;
+                        lo1_ftw             <= EM8_lo_ftw ;
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E8_fir_rst;
+        when "1110" =>  lo1_freq_sw         <= EM9_freq_sw;
+                        lo1_ddc_freq        <= EM9_ddc_freq;
+                        lo1_ftw             <= EM9_lo_ftw ;
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E9_fir_rst;
+        when "1111" =>  lo1_freq_sw         <= EM13_freq_sw;
+                        lo1_ddc_freq        <= EM13_ddc_freq;
+                        lo1_ftw             <= EM13_lo_ftw ;  
+                        lo_ftw_en1          <= lo_trig1;
+                        dds_fir_rst1        <= E13_fir_rst; 
+        when others =>  lo1_freq_sw         <= (others =>'0');                                                                                                                                                                                                                                                                                                                                                                                            
+                        lo1_ddc_freq        <= (others =>'0');                                           
+                        lo1_ftw             <= (others =>'0');
+                        lo_ftw_en1          <= '0';
+                        dds_fir_rst1        <= '0';
+        end case;  
+else
+        lo1_freq_sw         <= (others =>'0');  
+        lo1_ddc_freq        <= (others =>'0');  
+        lo1_ftw             <= (others =>'0');        
+        lo_ftw_en1          <= '0';             
+        dds_fir_rst1        <= '0';             
+end if;                                
+end if;                                
+end process;
+
+process(adc_clk)
+begin
+if(rising_edge(adc_clk)) then
+if(rst = '1') then
+    lo2_freq_sw         <= (others =>'0');
+    lo2_ddc_freq        <= (others =>'0');
+    lo2_ftw             <= (others =>'0');
+    lo_ftw_en2          <= '0';
+    dds_fir_rst2        <= '0';
+elsif(lo_trig2 = '1') then
+    case lo_ch_no2(3 downto 0) is
+        when "0000" =>  lo2_freq_sw         <= EM1_freq_sw;
+                        lo2_ddc_freq        <= EM1_ddc_freq;
+                        lo2_ftw             <= EM1_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2; 
+                        dds_fir_rst2        <= E1_fir_rst; 
+        when "0001" =>  lo2_freq_sw         <= EM5_freq_sw;
+                        lo2_ddc_freq        <= EM5_ddc_freq;
+                        lo2_ftw             <= EM5_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2;
+                        dds_fir_rst2        <= E5_fir_rst; 
+        when "0010" =>  lo2_freq_sw         <= EM12_freq_sw;
+                        lo2_ddc_freq        <= EM12_ddc_freq;
+                        lo2_ftw             <= EM12_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2;
+                        dds_fir_rst2        <= E12_fir_rst; 
+        when "0011" =>  lo2_freq_sw         <= EM16_freq_sw;
+                        lo2_ddc_freq        <= EM16_ddc_freq;
+                        lo2_ftw             <= EM16_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2;
+                        dds_fir_rst2        <= E16_fir_rst; 
+        when "0100" =>  lo2_freq_sw         <= EM2_freq_sw;
+                        lo2_ddc_freq        <= EM2_ddc_freq;
+                        lo2_ftw             <= EM2_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2; 
+                        dds_fir_rst2        <= E2_fir_rst;
+        when "0101" =>  lo2_freq_sw         <= EM6_freq_sw;
+                        lo2_ddc_freq        <= EM6_ddc_freq;
+                        lo2_ftw             <= EM6_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2;
+                        dds_fir_rst2        <= E6_fir_rst; 
+        when "0110" =>  lo2_freq_sw         <= EM11_freq_sw;
+                        lo2_ddc_freq        <= EM11_ddc_freq;
+                        lo2_ftw             <= EM11_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2;
+                        dds_fir_rst2        <= E11_fir_rst; 
+        when "0111" =>  lo2_freq_sw         <= EM15_freq_sw;
+                        lo2_ddc_freq        <= EM15_ddc_freq;
+                        lo2_ftw             <= EM15_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2;
+                        dds_fir_rst2        <= E15_fir_rst; 
+        when "1000" =>  lo2_freq_sw         <= EM3_freq_sw;
+                        lo2_ddc_freq        <= EM3_ddc_freq;
+                        lo2_ftw             <= EM3_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2;
+                        dds_fir_rst2        <= E3_fir_rst; 
+        when "1001" =>  lo2_freq_sw         <= EM7_freq_sw;
+                        lo2_ddc_freq        <= EM7_ddc_freq;
+                        lo2_ftw             <= EM7_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2;
+                        dds_fir_rst2        <= E7_fir_rst; 
+        when "1010" =>  lo2_freq_sw         <= EM10_freq_sw;
+                        lo2_ddc_freq        <= EM10_ddc_freq;
+                        lo2_ftw             <= EM10_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2; 
+                        dds_fir_rst2        <= E10_fir_rst;
+        when "1011" =>  lo2_freq_sw         <= EM14_freq_sw;
+                        lo2_ddc_freq        <= EM14_ddc_freq;
+                        lo2_ftw             <= EM14_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2; 
+                        dds_fir_rst2        <= E14_fir_rst; 
+        when "1100" =>  lo2_freq_sw         <= EM4_freq_sw;
+                        lo2_ddc_freq        <= EM4_ddc_freq;
+                        lo2_ftw             <= EM4_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2; 
+                        dds_fir_rst2        <= E4_fir_rst;
+        when "1101" =>  lo2_freq_sw         <= EM8_freq_sw;
+                        lo2_ddc_freq        <= EM8_ddc_freq;
+                        lo2_ftw             <= EM8_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2; 
+                        dds_fir_rst2        <= E8_fir_rst;
+        when "1110" =>  lo2_freq_sw         <= EM9_freq_sw;
+                        lo2_ddc_freq        <= EM9_ddc_freq;
+                        lo2_ftw             <= EM9_lo_ftw ;
+                        lo_ftw_en2          <= lo_trig2;
+                        dds_fir_rst2        <= E9_fir_rst; 
+        when "1111" =>  lo2_freq_sw         <= EM13_freq_sw;
+                        lo2_ddc_freq        <= EM13_ddc_freq;
+                        lo2_ftw             <= EM13_lo_ftw ; 
+                        lo_ftw_en2          <= lo_trig2; 
+                        dds_fir_rst2        <= E13_fir_rst;  
+        when others =>  lo2_freq_sw         <= (others =>'0');                                                                                                                                                                                                                                                                                                                                                                                            
+                        lo2_ddc_freq        <= (others =>'0');                                           
+                        lo2_ftw             <= (others =>'0');
+                        lo_ftw_en2          <= '0';
+                        dds_fir_rst2        <= '0';
+        end case; 
+else
+        lo2_freq_sw         <= (others =>'0');  
+        lo2_ddc_freq        <= (others =>'0');  
+        lo2_ftw             <= (others =>'0');  
+        lo_ftw_en2          <= '0';                     
+        dds_fir_rst2        <= '0';                     
+end if;                                
+end if;                                
+end process;
+
+process(adc_clk)
+begin
+if(rising_edge(adc_clk)) then
+if(rst = '1') then
+    lo3_freq_sw         <= (others =>'0');
+    lo3_ddc_freq        <= (others =>'0');
+    lo3_ftw             <= (others =>'0');
+    lo_ftw_en3          <= '0';
+    dds_fir_rst3        <= '0';
+elsif(lo_trig3 = '1') then
+    case lo_ch_no3(3 downto 0) is
+        when "0000" =>  lo3_freq_sw         <= EM1_freq_sw;
+                        lo3_ddc_freq        <= EM1_ddc_freq;
+                        lo3_ftw             <= EM1_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E1_fir_rst; 
+        when "0001" =>  lo3_freq_sw         <= EM5_freq_sw;
+                        lo3_ddc_freq        <= EM5_ddc_freq;
+                        lo3_ftw             <= EM5_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E5_fir_rst;
+        when "0010" =>  lo3_freq_sw         <= EM12_freq_sw;
+                        lo3_ddc_freq        <= EM12_ddc_freq;
+                        lo3_ftw             <= EM12_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E12_fir_rst;
+        when "0011" =>  lo3_freq_sw         <= EM16_freq_sw;
+                        lo3_ddc_freq        <= EM16_ddc_freq;
+                        lo3_ftw             <= EM16_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E16_fir_rst;
+        when "0100" =>  lo3_freq_sw         <= EM2_freq_sw;
+                        lo3_ddc_freq        <= EM2_ddc_freq;
+                        lo3_ftw             <= EM2_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E2_fir_rst;
+        when "0101" =>  lo3_freq_sw         <= EM6_freq_sw;
+                        lo3_ddc_freq        <= EM6_ddc_freq;
+                        lo3_ftw             <= EM6_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E6_fir_rst;
+        when "0110" =>  lo3_freq_sw         <= EM11_freq_sw;
+                        lo3_ddc_freq        <= EM11_ddc_freq;
+                        lo3_ftw             <= EM11_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E11_fir_rst;
+        when "0111" =>  lo3_freq_sw         <= EM15_freq_sw;
+                        lo3_ddc_freq        <= EM15_ddc_freq;
+                        lo3_ftw             <= EM15_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E15_fir_rst;
+        when "1000" =>  lo3_freq_sw         <= EM3_freq_sw;
+                        lo3_ddc_freq        <= EM3_ddc_freq;
+                        lo3_ftw             <= EM3_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E3_fir_rst;
+        when "1001" =>  lo3_freq_sw         <= EM7_freq_sw;
+                        lo3_ddc_freq        <= EM7_ddc_freq;
+                        lo3_ftw             <= EM7_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E7_fir_rst;
+        when "1010" =>  lo3_freq_sw         <= EM10_freq_sw;
+                        lo3_ddc_freq        <= EM10_ddc_freq;
+                        lo3_ftw             <= EM10_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E10_fir_rst;
+        when "1011" =>  lo3_freq_sw         <= EM14_freq_sw;
+                        lo3_ddc_freq        <= EM14_ddc_freq;
+                        lo3_ftw             <= EM14_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E14_fir_rst; 
+        when "1100" =>  lo3_freq_sw         <= EM4_freq_sw;
+                        lo3_ddc_freq        <= EM4_ddc_freq;
+                        lo3_ftw             <= EM4_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E4_fir_rst;
+        when "1101" =>  lo3_freq_sw         <= EM8_freq_sw;
+                        lo3_ddc_freq        <= EM8_ddc_freq;
+                        lo3_ftw             <= EM8_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E8_fir_rst;
+        when "1110" =>  lo3_freq_sw         <= EM9_freq_sw;
+                        lo3_ddc_freq        <= EM9_ddc_freq;
+                        lo3_ftw             <= EM9_lo_ftw ;
+                        lo_ftw_en3          <= lo_trig3;
+                        dds_fir_rst3        <= E9_fir_rst;
+        when "1111" =>  lo3_freq_sw         <= EM13_freq_sw;
+                        lo3_ddc_freq        <= EM13_ddc_freq;
+                        lo3_ftw             <= EM13_lo_ftw ; 
+                        lo_ftw_en3          <= lo_trig3; 
+                        dds_fir_rst3        <= E13_fir_rst; 
+        when others =>  lo3_freq_sw         <= (others =>'0');                                                                                                                                                                                                                                                                                                                                                                                            
+                        lo3_ddc_freq        <= (others =>'0');                                           
+                        lo3_ftw             <= (others =>'0');
+                        lo_ftw_en3          <= '0';
+                        dds_fir_rst3        <= '0';
+        end case;
+else 
+        lo3_freq_sw         <= (others =>'0'); 
+        lo3_ddc_freq        <= (others =>'0'); 
+        lo3_ftw             <= (others =>'0'); 
+        lo_ftw_en3          <= '0';                    
+        dds_fir_rst3        <= '0';                    
+end if;                                
+end if;                                
+end process;
+
+process(adc_clk)
+begin
+if(rising_edge(adc_clk)) then
+if(rst = '1') then
+    lo4_freq_sw         <= (others =>'0');
+    lo4_ddc_freq        <= (others =>'0');
+    lo4_ftw             <= (others =>'0');
+    lo_ftw_en4          <= '0';
+    dds_fir_rst4        <= '0';
+elsif(lo_trig4 = '1') then
+    case lo_ch_no4(3 downto 0) is
+        when "0000" =>  lo4_freq_sw         <= EM1_freq_sw;
+                        lo4_ddc_freq        <= EM1_ddc_freq;
+                        lo4_ftw             <= EM1_lo_ftw ; 
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E1_fir_rst;
+        when "0001" =>  lo4_freq_sw         <= EM5_freq_sw;
+                        lo4_ddc_freq        <= EM5_ddc_freq;
+                        lo4_ftw             <= EM5_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E5_fir_rst;
+        when "0010" =>  lo4_freq_sw         <= EM12_freq_sw;
+                        lo4_ddc_freq        <= EM12_ddc_freq;
+                        lo4_ftw             <= EM12_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E12_fir_rst;
+        when "0011" =>  lo4_freq_sw         <= EM16_freq_sw;
+                        lo4_ddc_freq        <= EM16_ddc_freq;
+                        lo4_ftw             <= EM16_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E16_fir_rst;
+        when "0100" =>  lo4_freq_sw         <= EM2_freq_sw;
+                        lo4_ddc_freq        <= EM2_ddc_freq;
+                        lo4_ftw             <= EM2_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E2_fir_rst;
+        when "0101" =>  lo4_freq_sw         <= EM6_freq_sw;
+                        lo4_ddc_freq        <= EM6_ddc_freq;
+                        lo4_ftw             <= EM6_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E6_fir_rst;
+        when "0110" =>  lo4_freq_sw         <= EM11_freq_sw;
+                        lo4_ddc_freq        <= EM11_ddc_freq;
+                        lo4_ftw             <= EM11_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E11_fir_rst;
+        when "0111" =>  lo4_freq_sw         <= EM15_freq_sw;
+                        lo4_ddc_freq        <= EM15_ddc_freq;
+                        lo4_ftw             <= EM15_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E15_fir_rst;
+        when "1000" =>  lo4_freq_sw         <= EM3_freq_sw;
+                        lo4_ddc_freq        <= EM3_ddc_freq;
+                        lo4_ftw             <= EM3_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E3_fir_rst;
+        when "1001" =>  lo4_freq_sw         <= EM7_freq_sw;
+                        lo4_ddc_freq        <= EM7_ddc_freq;
+                        lo4_ftw             <= EM7_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E7_fir_rst;
+        when "1010" =>  lo4_freq_sw         <= EM10_freq_sw;
+                        lo4_ddc_freq        <= EM10_ddc_freq;
+                        lo4_ftw             <= EM10_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E10_fir_rst;
+        when "1011" =>  lo4_freq_sw         <= EM14_freq_sw;
+                        lo4_ddc_freq        <= EM14_ddc_freq;
+                        lo4_ftw             <= EM14_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4; 
+                        dds_fir_rst4        <= E14_fir_rst;
+        when "1100" =>  lo4_freq_sw         <= EM4_freq_sw;
+                        lo4_ddc_freq        <= EM4_ddc_freq;
+                        lo4_ftw             <= EM4_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E4_fir_rst;
+        when "1101" =>  lo4_freq_sw         <= EM8_freq_sw;
+                        lo4_ddc_freq        <= EM8_ddc_freq;
+                        lo4_ftw             <= EM8_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E8_fir_rst;
+        when "1110" =>  lo4_freq_sw         <= EM9_freq_sw;
+                        lo4_ddc_freq        <= EM9_ddc_freq;
+                        lo4_ftw             <= EM9_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E9_fir_rst;
+        when "1111" =>  lo4_freq_sw         <= EM13_freq_sw;
+                        lo4_ddc_freq        <= EM13_ddc_freq;
+                        lo4_ftw             <= EM13_lo_ftw ;
+                        lo_ftw_en4          <= lo_trig4;
+                        dds_fir_rst4        <= E13_fir_rst;   
+        when others =>  lo4_freq_sw         <= (others =>'0');                                                                                                                                                                                                                                                                                                                                                                                            
+                        lo4_ddc_freq        <= (others =>'0');                                           
+                        lo4_ftw             <= (others =>'0');
+                        lo_ftw_en4          <= '0';
+                        dds_fir_rst4        <= '0';
+        end case;
+else
+        lo4_freq_sw         <= (others =>'0'); 
+        lo4_ddc_freq        <= (others =>'0'); 
+        lo4_ftw             <= (others =>'0'); 
+        lo_ftw_en4          <= '0';            
+        dds_fir_rst4        <= '0';            
+end if;                                
+end if;                                
+end process;
+
+module_sel_sw    <= module_sel;
+
+process(adc_clk)
+begin
+if(rising_edgE(adc_clk)) then
+if(module_sel = x"0") then
+    freq_sw             <= lo1_freq_sw;
+    jesd_jamm_data      <= "00000000";
+    jesd_jamm_data_vld  <= '0'; --lo_trig1_pul;
+    
+elsif(module_sel = x"1") then
+    freq_sw             <= lo2_freq_sw;
+    jesd_jamm_data      <= "00000000";
+    jesd_jamm_data_vld  <= '0'; --lo_trig2_pul;
+--    rx_vlaid_out        <= lo_trig2;
+elsif(module_sel = x"2") then
+    freq_sw             <= lo3_freq_sw;
+    jesd_jamm_data      <= "00000000";
+    jesd_jamm_data_vld  <= '0'; --lo_trig3_pul;
+--    rx_vlaid_out        <= lo_trig3;
+elsif(module_sel = x"3") then
+    freq_sw             <= lo4_freq_sw;
+    jesd_jamm_data      <= "00000000";
+    jesd_jamm_data_vld  <= '0'; --lo_trig4_pul;
+--    rx_vlaid_out        <= lo_trig4;
+else
+    freq_sw             <= (others =>'0');
+    jesd_jamm_data      <= (others =>'0');
+    jesd_jamm_data_vld  <= '0';
+end if;            
+end if;
+end process;  
+
+rx_vlaid_out        <= lo_trig1 or lo_trig2 or lo_trig3 or lo_trig4;
+
+pgen1: pul_gen 
+  port map(
+  clk  => adc_clk, 
+  din  => lo_trig1,
+  dout => lo_trig1_pul
+);
+
+pgen2: pul_gen 
+  port map(
+  clk  => adc_clk, 
+  din  => lo_trig2,
+  dout => lo_trig2_pul
+);
+
+pgen3: pul_gen 
+  port map(
+  clk  => adc_clk, 
+  din  => lo_trig3,
+  dout => lo_trig3_pul
+);
+
+pgen4: pul_gen 
+  port map(
+  clk  => adc_clk, 
+  din  => lo_trig4,
+  dout => lo_trig4_pul
+);
+
+i_DDC_module1 : DDC_module 
+Port map(
+      clk_60mhz         => clk,
+      adc_clk           => adc_clk,
+      rst               => rst or dds_fir_rst1,
+      ftw_vld           => lo_trig1_pul,
+      adc_data_i        => adc_data1,
+      prog_full_thresh  => '0' & x"20", --(others =>'0'),
+      dds_sin_out       => lo1_ddc_freq(319 downto 160),
+      dds_cos_out       => lo1_ddc_freq(159 downto 0),
+                     
+      adc_dec_i         => adc_dec_i1,
+      adc_dec_q         => adc_dec_q1
+     );
+
+i_DDC_module2 : DDC_module 
+Port map(
+      clk_60mhz         => clk,
+      adc_clk           => adc_clk,
+      rst               => rst or dds_fir_rst2,
+      ftw_vld           => lo_trig2_pul,
+      adc_data_i        => adc_data2,
+      prog_full_thresh  => '0' & x"20",
+      dds_sin_out       => lo2_ddc_freq(319 downto 160),
+      dds_cos_out       => lo2_ddc_freq(159 downto 0),
+                     
+      adc_dec_i         => adc_dec_i2,
+      adc_dec_q         => adc_dec_q2
+     );
+
+i_DDC_module3 : DDC_module 
+Port map(
+      clk_60mhz         => clk,
+      adc_clk           => adc_clk,
+      rst               => rst or dds_fir_rst2,
+      ftw_vld           => lo_trig3_pul,
+      adc_data_i        => adc_data3,
+      prog_full_thresh  => '0' & x"20",
+      dds_sin_out       => lo3_ddc_freq(319 downto 160),
+      dds_cos_out       => lo3_ddc_freq(159 downto 0),
+                     
+      adc_dec_i         => adc_dec_i3,
+      adc_dec_q         => adc_dec_q3
+     );
+
+i_DDC_module4 : DDC_module 
+Port map(
+      clk_60mhz         => clk,
+      adc_clk           => adc_clk,
+      rst               => rst or dds_fir_rst2,
+      ftw_vld           => lo_trig4_pul,
+      adc_data_i        => adc_data4,
+      prog_full_thresh  => '0' & x"20",
+      dds_sin_out       => lo4_ddc_freq(319 downto 160),
+      dds_cos_out       => lo4_ddc_freq(159 downto 0),
+                     
+      adc_dec_i         => adc_dec_i4,
+      adc_dec_q         => adc_dec_q4
+     );
+
+------------------------------------------ lock status
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM1_lock_status     <= '0';
+	EM1_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"0") and (lo_trig1 = '1')) then	
+		EM1_lock_status     <= lo_trig1;
+		EM1_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"0") and (lo_trig2 = '1')) then	
+		EM1_lock_status     <= lo_trig2;
+		EM1_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"0") and (lo_trig3 = '1')) then	
+		EM1_lock_status     <= lo_trig3;
+		EM1_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"0") and (lo_trig4 = '1')) then	
+		EM1_lock_status     <= lo_trig4;
+		EM1_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM1_lock_status     <= '0';
+		EM1_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;	
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM5_lock_status     <= '0';
+	EM5_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"1") and (lo_trig1 = '1')) then	
+		EM5_lock_status     <= lo_trig1;
+		EM5_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"1") and (lo_trig2 = '1')) then	
+		EM5_lock_status     <= lo_trig2;
+		EM5_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"1") and (lo_trig3 = '1')) then	
+		EM5_lock_status     <= lo_trig3;
+		EM5_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"1") and (lo_trig4 = '1')) then	
+		EM5_lock_status     <= lo_trig4;
+		EM5_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM5_lock_status     <= '0';
+		EM5_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM12_lock_status     <= '0';
+	EM12_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"2") and (lo_trig1 = '1')) then	
+		EM12_lock_status     <= lo_trig1;
+		EM12_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"2") and (lo_trig2 = '1')) then	
+		EM12_lock_status     <= lo_trig2;
+		EM12_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"2") and (lo_trig3 = '1')) then	
+		EM12_lock_status     <= lo_trig3;
+		EM12_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"2") and (lo_trig4 = '1')) then	
+		EM12_lock_status     <= lo_trig4;
+		EM12_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM12_lock_status     <= '0';
+		EM12_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;	
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM16_lock_status     <= '0';
+	EM16_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"3") and (lo_trig1 = '1')) then	
+		EM16_lock_status     <= lo_trig1;
+		EM16_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"3") and (lo_trig2 = '1')) then	
+		EM16_lock_status     <= lo_trig2;
+		EM16_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"3") and (lo_trig3 = '1')) then	
+		EM16_lock_status     <= lo_trig3;
+		EM16_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"3") and (lo_trig4 = '1')) then	
+		EM16_lock_status     <= lo_trig4;
+		EM16_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM16_lock_status     <= '0';
+		EM16_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM2_lock_status     <= '0';
+	EM2_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"4") and (lo_trig1 = '1')) then	
+		EM2_lock_status     <= lo_trig1;
+		EM2_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"4") and (lo_trig2 = '1')) then	
+		EM2_lock_status     <= lo_trig2;
+		EM2_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"4") and (lo_trig3 = '1')) then	
+		EM2_lock_status     <= lo_trig3;
+		EM2_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"4") and (lo_trig4 = '1')) then	
+		EM2_lock_status     <= lo_trig4;
+		EM2_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM2_lock_status     <= '0';
+		EM2_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;	
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM6_lock_status     <= '0';
+	EM6_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"5") and (lo_trig1 = '1')) then	
+		EM6_lock_status     <= lo_trig1;
+		EM6_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"5") and (lo_trig2 = '1')) then	
+		EM6_lock_status     <= lo_trig2;
+		EM6_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"5") and (lo_trig3 = '1')) then	
+		EM6_lock_status     <= lo_trig3;
+		EM6_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"5") and (lo_trig4 = '1')) then	
+		EM6_lock_status     <= lo_trig4;
+		EM6_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM6_lock_status     <= '0';
+		EM6_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM11_lock_status     <= '0';
+	EM11_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"6") and (lo_trig1 = '1')) then	
+		EM11_lock_status     <= lo_trig1;
+		EM11_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"6") and (lo_trig2 = '1')) then	
+		EM11_lock_status     <= lo_trig2;
+		EM11_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"6") and (lo_trig3 = '1')) then	
+		EM11_lock_status     <= lo_trig3;
+		EM11_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"6") and (lo_trig4 = '1')) then	
+		EM11_lock_status     <= lo_trig4;
+		EM11_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM11_lock_status     <= '0';
+		EM11_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;	
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM15_lock_status     <= '0';
+	EM15_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"7") and (lo_trig1 = '1')) then	
+		EM15_lock_status     <= lo_trig1;
+		EM15_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"7") and (lo_trig2 = '1')) then	
+		EM15_lock_status     <= lo_trig2;
+		EM15_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"7") and (lo_trig3 = '1')) then	
+		EM15_lock_status     <= lo_trig3;
+		EM15_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"7") and (lo_trig4 = '1')) then	
+		EM15_lock_status     <= lo_trig4;
+		EM15_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM15_lock_status     <= '0';
+		EM15_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;
+
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM3_lock_status     <= '0';
+	EM3_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"8") and (lo_trig1 = '1')) then	
+		EM3_lock_status     <= lo_trig1;
+		EM3_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"8") and (lo_trig1 = '1')) then	
+		EM3_lock_status     <= lo_trig2;
+		EM3_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"8") and (lo_trig1 = '1')) then	
+		EM3_lock_status     <= lo_trig3;
+		EM3_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"8") and (lo_trig1 = '1')) then	
+		EM3_lock_status     <= lo_trig4;
+		EM3_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM3_lock_status     <= '0';
+		EM3_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;	
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM7_lock_status     <= '0';
+	EM7_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"9") and (lo_trig1 = '1')) then	
+		EM7_lock_status     <= lo_trig1;
+		EM7_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"9") and (lo_trig1 = '1')) then	
+		EM7_lock_status     <= lo_trig2;
+		EM7_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"9") and (lo_trig1 = '1')) then	
+		EM7_lock_status     <= lo_trig3;
+		EM7_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"9") and (lo_trig1 = '1')) then	
+		EM7_lock_status     <= lo_trig4;
+		EM7_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM7_lock_status     <= '0';
+		EM7_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM10_lock_status     <= '0';
+	EM10_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"a") and (lo_trig1 = '1')) then	
+		EM10_lock_status     <= lo_trig1;
+		EM10_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"a") and (lo_trig1 = '1')) then	
+		EM10_lock_status     <= lo_trig2;
+		EM10_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"a") and (lo_trig1 = '1')) then	
+		EM10_lock_status     <= lo_trig3;
+		EM10_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"a") and (lo_trig1 = '1')) then	
+		EM10_lock_status     <= lo_trig4;
+		EM10_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM10_lock_status     <= '0';
+		EM10_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;	
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM14_lock_status     <= '0';
+	EM14_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"b") and (lo_trig1 = '1')) then	
+		EM14_lock_status     <= lo_trig1;
+		EM14_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"b") and (lo_trig1 = '1')) then	
+		EM14_lock_status     <= lo_trig2;
+		EM14_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"b") and (lo_trig1 = '1')) then	
+		EM14_lock_status     <= lo_trig3;
+		EM14_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"b") and (lo_trig1 = '1')) then	
+		EM14_lock_status     <= lo_trig4;
+		EM14_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM14_lock_status     <= '0';
+		EM14_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM4_lock_status     <= '0';
+	EM4_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"c") and (lo_trig1 = '1')) then	
+		EM4_lock_status     <= lo_trig1;
+		EM4_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"c") and (lo_trig1 = '1')) then	
+		EM4_lock_status     <= lo_trig2;
+		EM4_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"c") and (lo_trig1 = '1')) then	
+		EM4_lock_status     <= lo_trig3;
+		EM4_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"c") and (lo_trig1 = '1')) then	
+		EM4_lock_status     <= lo_trig4;
+		EM4_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM4_lock_status     <= '0';
+		EM4_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;	
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM8_lock_status     <= '0';
+	EM8_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"d") and (lo_trig1 = '1')) then	
+		EM8_lock_status     <= lo_trig1;
+		EM8_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"d") and (lo_trig1 = '1')) then	
+		EM8_lock_status     <= lo_trig2;
+		EM8_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"d") and (lo_trig1 = '1')) then	
+		EM8_lock_status     <= lo_trig3;
+		EM8_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"d") and (lo_trig1 = '1')) then	
+		EM8_lock_status     <= lo_trig4;
+		EM8_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM8_lock_status     <= '0';
+		EM8_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM9_lock_status     <= '0';
+	EM9_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"e") and (lo_trig1 = '1')) then	
+		EM9_lock_status     <= lo_trig1;
+		EM9_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"e") and (lo_trig1 = '1')) then	
+		EM9_lock_status     <= lo_trig2;
+		EM9_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"e") and (lo_trig1 = '1')) then	
+		EM9_lock_status     <= lo_trig3;
+		EM9_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"e") and (lo_trig1 = '1')) then	
+		EM9_lock_status     <= lo_trig4;
+		EM9_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM9_lock_status     <= '0';
+		EM9_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;	
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+	EM13_lock_status     <= '0';
+	EM13_ddc_data        <= (others =>'0');	
+else
+	if((lo_ch_no1(3 downto 0) = x"f") and (lo_trig1 = '1')) then	
+		EM13_lock_status     <= lo_trig1;
+		EM13_ddc_data        <= adc_dec_i1 & adc_dec_q1;
+	elsif((lo_ch_no2(3 downto 0) = x"f") and (lo_trig1 = '1')) then	
+		EM13_lock_status     <= lo_trig2;
+		EM13_ddc_data        <= adc_dec_i2 & adc_dec_q2;		
+	elsif((lo_ch_no3(3 downto 0) = x"f") and (lo_trig1 = '1')) then	
+		EM13_lock_status     <= lo_trig3;
+		EM13_ddc_data        <= adc_dec_i3 & adc_dec_q3;		
+	elsif((lo_ch_no4(3 downto 0) = x"f") and (lo_trig1 = '1')) then	
+		EM13_lock_status     <= lo_trig4;
+		EM13_ddc_data        <= adc_dec_i4 & adc_dec_q4;	
+	else	
+		EM13_lock_status     <= '0';
+		EM13_ddc_data        <= (others =>'0');	
+	end if;
+end if;
+end if;
+end process;
+
+end Behavioral;

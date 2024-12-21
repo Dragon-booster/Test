@@ -1,0 +1,1781 @@
+
+----- Stagger_PRI Tracker --------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+entity PRI_Tracker3 is
+	port( 	    CLK 				: in std_logic ;                   
+				ENABLE				: in std_logic ;                   
+				pulse_in			: in std_logic ;
+				pp_wr_ena			: in std_logic ;
+				stagger_level		: in std_logic_vector(7 downto 0) ;
+				pp_addra			: in std_logic_vector(7 downto 0) ;
+				pp_dina				: in std_logic_vector(79 downto 0);				
+				no_of_pulse_to_look	: in std_logic_vector(7 downto 0) ;
+				no_of_pulse_to_Jamm	: in std_logic_vector(7 downto 0) ;				  
+				Stagger_PRI    		: in std_logic ;
+				RESET           	: in std_logic  );
+end PRI_Tracker3;
+
+architecture Behavioral of PRI_Tracker3 is			
+
+signal pw_cntr  : std_logic_vector(31 downto 0); 
+
+signal pw_cntr_latch1  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch2  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch3  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch4  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch5  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch6  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch7  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch8  : std_logic_vector(31 downto 0);
+ 
+signal toa_cntr_latch1  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch2  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch3  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch4  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch5  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch6  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch7  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch8  : std_logic_vector(31 downto 0);
+signal toa_cntr_latch9  : std_logic_vector(31 downto 0);
+signal toa_diff_1  : std_logic_vector(31 downto 0);
+signal toa_diff_2  : std_logic_vector(31 downto 0);
+signal toa_diff_3  : std_logic_vector(31 downto 0);
+signal toa_diff_4  : std_logic_vector(31 downto 0);
+signal toa_diff_5  : std_logic_vector(31 downto 0);
+signal toa_diff_6  : std_logic_vector(31 downto 0);
+signal toa_diff_7  : std_logic_vector(31 downto 0);
+signal toa_diff_8  : std_logic_vector(31 downto 0);
+
+ 
+signal look_pass_cntr01  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr02  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr03  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr04  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr05  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr06  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr07  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr08  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr09  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr10  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr11  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr12  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr13  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr14  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr15  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr16  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr17  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr18  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr19  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr20  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr21  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr22  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr23  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr24  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr25  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr26  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr27  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr28  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr29  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr30  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr31  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr32  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr33  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr34  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr35  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr36  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr37  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr38  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr39  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr40  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr41  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr42  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr43  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr44  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr45  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr46  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr47  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr48  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr49  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr50  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr51  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr52  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr53  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr54  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr55  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr56  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr57  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr58  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr59  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr60  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr61  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr62  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr63  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr64  : std_logic_vector(7 downto 0); 
+
+ 
+signal jamm_pass_cntr  : std_logic_vector(7 downto 0); 
+signal toa_cntr  : std_logic_vector(31 downto 0); 
+signal cnt_a  : std_logic_vector(31 downto 0); 
+signal cnt_b  : std_logic_vector(31 downto 0);
+signal cnt_d  : std_logic_vector(31 downto 0);
+signal cnt_c  : std_logic_vector(9 downto 0) ;
+signal addra  : std_logic_vector(9 downto 0) ;
+signal douta  : std_logic_vector(63 downto 0);
+signal ena    : std_logic;
+signal preamble_pulse    : std_logic;
+signal pulse_in_1    : std_logic;
+signal pulse_in_2    : std_logic;
+
+signal fall_pulse_1		: std_logic;
+signal fall_pulse_2		: std_logic;
+signal fall_pulse_3		: std_logic;
+signal fall_pulse_4		: std_logic;
+signal fall_pulse_5		: std_logic;
+
+signal pp_rd_ena    : std_logic;
+signal pp_addrb    : std_logic_vector(7 downto 0);
+
+signal pp_doutb01    : std_logic_vector(79 downto 0);
+signal pp_doutb02    : std_logic_vector(79 downto 0);
+signal pp_doutb03    : std_logic_vector(79 downto 0);
+signal pp_doutb04    : std_logic_vector(79 downto 0);
+signal pp_doutb05    : std_logic_vector(79 downto 0);
+signal pp_doutb06    : std_logic_vector(79 downto 0);
+signal pp_doutb07    : std_logic_vector(79 downto 0);
+signal pp_doutb08    : std_logic_vector(79 downto 0);
+signal pp_doutb09    : std_logic_vector(79 downto 0);
+signal pp_doutb10    : std_logic_vector(79 downto 0);
+signal pp_doutb11    : std_logic_vector(79 downto 0);
+signal pp_doutb12    : std_logic_vector(79 downto 0);
+signal pp_doutb13    : std_logic_vector(79 downto 0);
+signal pp_doutb14    : std_logic_vector(79 downto 0);
+signal pp_doutb15    : std_logic_vector(79 downto 0);
+signal pp_doutb16    : std_logic_vector(79 downto 0);
+signal pp_doutb17    : std_logic_vector(79 downto 0);
+signal pp_doutb18    : std_logic_vector(79 downto 0);
+signal pp_doutb19    : std_logic_vector(79 downto 0);
+signal pp_doutb20    : std_logic_vector(79 downto 0);
+signal pp_doutb21    : std_logic_vector(79 downto 0);
+signal pp_doutb22    : std_logic_vector(79 downto 0);
+signal pp_doutb23    : std_logic_vector(79 downto 0);
+signal pp_doutb24    : std_logic_vector(79 downto 0);
+signal pp_doutb25    : std_logic_vector(79 downto 0);
+signal pp_doutb26    : std_logic_vector(79 downto 0);
+signal pp_doutb27    : std_logic_vector(79 downto 0);
+signal pp_doutb28    : std_logic_vector(79 downto 0);
+signal pp_doutb29    : std_logic_vector(79 downto 0);
+signal pp_doutb30    : std_logic_vector(79 downto 0);
+signal pp_doutb31    : std_logic_vector(79 downto 0);
+signal pp_doutb32    : std_logic_vector(79 downto 0);
+signal pp_doutb33    : std_logic_vector(79 downto 0);
+signal pp_doutb34    : std_logic_vector(79 downto 0);
+signal pp_doutb35    : std_logic_vector(79 downto 0);
+signal pp_doutb36    : std_logic_vector(79 downto 0);
+signal pp_doutb37    : std_logic_vector(79 downto 0);
+signal pp_doutb38    : std_logic_vector(79 downto 0);
+signal pp_doutb39    : std_logic_vector(79 downto 0);
+signal pp_doutb40    : std_logic_vector(79 downto 0);
+signal pp_doutb41    : std_logic_vector(79 downto 0);
+signal pp_doutb42    : std_logic_vector(79 downto 0);
+signal pp_doutb43    : std_logic_vector(79 downto 0);
+signal pp_doutb44    : std_logic_vector(79 downto 0);
+signal pp_doutb45    : std_logic_vector(79 downto 0);
+signal pp_doutb46    : std_logic_vector(79 downto 0);
+signal pp_doutb47    : std_logic_vector(79 downto 0);
+signal pp_doutb48    : std_logic_vector(79 downto 0);
+signal pp_doutb49    : std_logic_vector(79 downto 0);
+signal pp_doutb50    : std_logic_vector(79 downto 0);
+signal pp_doutb51    : std_logic_vector(79 downto 0);
+signal pp_doutb52    : std_logic_vector(79 downto 0);
+signal pp_doutb53    : std_logic_vector(79 downto 0);
+signal pp_doutb54    : std_logic_vector(79 downto 0);
+signal pp_doutb55    : std_logic_vector(79 downto 0);
+signal pp_doutb56    : std_logic_vector(79 downto 0);
+signal pp_doutb57    : std_logic_vector(79 downto 0);
+signal pp_doutb58    : std_logic_vector(79 downto 0);
+signal pp_doutb59    : std_logic_vector(79 downto 0);
+signal pp_doutb60    : std_logic_vector(79 downto 0);
+signal pp_doutb61    : std_logic_vector(79 downto 0);
+signal pp_doutb62    : std_logic_vector(79 downto 0);
+signal pp_doutb63    : std_logic_vector(79 downto 0);
+signal pp_doutb64    : std_logic_vector(79 downto 0);
+
+
+signal req_pri01    : std_logic_vector(31 downto 0);
+signal req_pri02    : std_logic_vector(31 downto 0);
+signal req_pri03    : std_logic_vector(31 downto 0);
+signal req_pri04    : std_logic_vector(31 downto 0);
+signal req_pri05    : std_logic_vector(31 downto 0);
+signal req_pri06    : std_logic_vector(31 downto 0);
+signal req_pri07    : std_logic_vector(31 downto 0);
+signal req_pri08    : std_logic_vector(31 downto 0);
+signal req_pri09    : std_logic_vector(31 downto 0);
+signal req_pri10    : std_logic_vector(31 downto 0);
+signal req_pri11    : std_logic_vector(31 downto 0);
+signal req_pri12    : std_logic_vector(31 downto 0);
+signal req_pri13    : std_logic_vector(31 downto 0);
+signal req_pri14    : std_logic_vector(31 downto 0);
+signal req_pri15    : std_logic_vector(31 downto 0);
+signal req_pri16    : std_logic_vector(31 downto 0);
+signal req_pri17    : std_logic_vector(31 downto 0);
+signal req_pri18    : std_logic_vector(31 downto 0);
+signal req_pri19    : std_logic_vector(31 downto 0);
+signal req_pri20    : std_logic_vector(31 downto 0);
+signal req_pri21    : std_logic_vector(31 downto 0);
+signal req_pri22    : std_logic_vector(31 downto 0);
+signal req_pri23    : std_logic_vector(31 downto 0);
+signal req_pri24    : std_logic_vector(31 downto 0);
+signal req_pri25    : std_logic_vector(31 downto 0);
+signal req_pri26    : std_logic_vector(31 downto 0);
+signal req_pri27    : std_logic_vector(31 downto 0);
+signal req_pri28    : std_logic_vector(31 downto 0);
+signal req_pri29    : std_logic_vector(31 downto 0);
+signal req_pri30    : std_logic_vector(31 downto 0);
+signal req_pri31    : std_logic_vector(31 downto 0);
+signal req_pri32    : std_logic_vector(31 downto 0);
+signal req_pri33    : std_logic_vector(31 downto 0);
+signal req_pri34    : std_logic_vector(31 downto 0);
+signal req_pri35    : std_logic_vector(31 downto 0);
+signal req_pri36    : std_logic_vector(31 downto 0);
+signal req_pri37    : std_logic_vector(31 downto 0);
+signal req_pri38    : std_logic_vector(31 downto 0);
+signal req_pri39    : std_logic_vector(31 downto 0);
+signal req_pri40    : std_logic_vector(31 downto 0);
+signal req_pri41    : std_logic_vector(31 downto 0);
+signal req_pri42    : std_logic_vector(31 downto 0);
+signal req_pri43    : std_logic_vector(31 downto 0);
+signal req_pri44    : std_logic_vector(31 downto 0);
+signal req_pri45    : std_logic_vector(31 downto 0);
+signal req_pri46    : std_logic_vector(31 downto 0);
+signal req_pri47    : std_logic_vector(31 downto 0);
+signal req_pri48    : std_logic_vector(31 downto 0);
+signal req_pri49    : std_logic_vector(31 downto 0);
+signal req_pri50    : std_logic_vector(31 downto 0);
+signal req_pri51    : std_logic_vector(31 downto 0);
+signal req_pri52    : std_logic_vector(31 downto 0);
+signal req_pri53    : std_logic_vector(31 downto 0);
+signal req_pri54    : std_logic_vector(31 downto 0);
+signal req_pri55    : std_logic_vector(31 downto 0);
+signal req_pri56    : std_logic_vector(31 downto 0);
+signal req_pri57    : std_logic_vector(31 downto 0);
+signal req_pri58    : std_logic_vector(31 downto 0);
+signal req_pri59    : std_logic_vector(31 downto 0);
+signal req_pri60    : std_logic_vector(31 downto 0);
+signal req_pri61    : std_logic_vector(31 downto 0);
+signal req_pri62    : std_logic_vector(31 downto 0);
+signal req_pri63    : std_logic_vector(31 downto 0);
+signal req_pri64    : std_logic_vector(31 downto 0);
+
+
+signal req_pw01    : std_logic_vector(31 downto 0);
+signal req_pw02    : std_logic_vector(31 downto 0);
+signal req_pw03    : std_logic_vector(31 downto 0);
+signal req_pw04    : std_logic_vector(31 downto 0);
+signal req_pw05    : std_logic_vector(31 downto 0);
+signal req_pw06    : std_logic_vector(31 downto 0);
+signal req_pw07    : std_logic_vector(31 downto 0);
+signal req_pw08    : std_logic_vector(31 downto 0);
+signal req_pw09    : std_logic_vector(31 downto 0);
+signal req_pw10    : std_logic_vector(31 downto 0);
+signal req_pw11    : std_logic_vector(31 downto 0);
+signal req_pw12    : std_logic_vector(31 downto 0);
+signal req_pw13    : std_logic_vector(31 downto 0);
+signal req_pw14    : std_logic_vector(31 downto 0);
+signal req_pw15    : std_logic_vector(31 downto 0);
+signal req_pw16    : std_logic_vector(31 downto 0);
+signal req_pw17    : std_logic_vector(31 downto 0);
+signal req_pw18    : std_logic_vector(31 downto 0);
+signal req_pw19    : std_logic_vector(31 downto 0);
+signal req_pw20    : std_logic_vector(31 downto 0);
+signal req_pw21    : std_logic_vector(31 downto 0);
+signal req_pw22    : std_logic_vector(31 downto 0);
+signal req_pw23    : std_logic_vector(31 downto 0);
+signal req_pw24    : std_logic_vector(31 downto 0);
+signal req_pw25    : std_logic_vector(31 downto 0);
+signal req_pw26    : std_logic_vector(31 downto 0);
+signal req_pw27    : std_logic_vector(31 downto 0);
+signal req_pw28    : std_logic_vector(31 downto 0);
+signal req_pw29    : std_logic_vector(31 downto 0);
+signal req_pw30    : std_logic_vector(31 downto 0);
+signal req_pw31    : std_logic_vector(31 downto 0);
+signal req_pw32    : std_logic_vector(31 downto 0);
+signal req_pw33    : std_logic_vector(31 downto 0);
+signal req_pw34    : std_logic_vector(31 downto 0);
+signal req_pw35    : std_logic_vector(31 downto 0);
+signal req_pw36    : std_logic_vector(31 downto 0);
+signal req_pw37    : std_logic_vector(31 downto 0);
+signal req_pw38    : std_logic_vector(31 downto 0);
+signal req_pw39    : std_logic_vector(31 downto 0);
+signal req_pw40    : std_logic_vector(31 downto 0);
+signal req_pw41    : std_logic_vector(31 downto 0);
+signal req_pw42    : std_logic_vector(31 downto 0);
+signal req_pw43    : std_logic_vector(31 downto 0);
+signal req_pw44    : std_logic_vector(31 downto 0);
+signal req_pw45    : std_logic_vector(31 downto 0);
+signal req_pw46    : std_logic_vector(31 downto 0);
+signal req_pw47    : std_logic_vector(31 downto 0);
+signal req_pw48    : std_logic_vector(31 downto 0);
+signal req_pw49    : std_logic_vector(31 downto 0);
+signal req_pw50    : std_logic_vector(31 downto 0);
+signal req_pw51    : std_logic_vector(31 downto 0);
+signal req_pw52    : std_logic_vector(31 downto 0);
+signal req_pw53    : std_logic_vector(31 downto 0);
+signal req_pw54    : std_logic_vector(31 downto 0);
+signal req_pw55    : std_logic_vector(31 downto 0);
+signal req_pw56    : std_logic_vector(31 downto 0);
+signal req_pw57    : std_logic_vector(31 downto 0);
+signal req_pw58    : std_logic_vector(31 downto 0);
+signal req_pw59    : std_logic_vector(31 downto 0);
+signal req_pw60    : std_logic_vector(31 downto 0);
+signal req_pw61    : std_logic_vector(31 downto 0);
+signal req_pw62    : std_logic_vector(31 downto 0);
+signal req_pw63    : std_logic_vector(31 downto 0);
+signal req_pw64    : std_logic_vector(31 downto 0);
+
+
+
+signal req_nop01    : std_logic_vector(7 downto 0);
+signal req_nop02    : std_logic_vector(7 downto 0);
+signal req_nop03    : std_logic_vector(7 downto 0);
+signal req_nop04    : std_logic_vector(7 downto 0);
+signal req_nop05    : std_logic_vector(7 downto 0);
+signal req_nop06    : std_logic_vector(7 downto 0);
+signal req_nop07    : std_logic_vector(7 downto 0);
+signal req_nop08    : std_logic_vector(7 downto 0);
+signal req_nop09    : std_logic_vector(7 downto 0);
+signal req_nop10    : std_logic_vector(7 downto 0);
+signal req_nop11    : std_logic_vector(7 downto 0);
+signal req_nop12    : std_logic_vector(7 downto 0);
+signal req_nop13    : std_logic_vector(7 downto 0);
+signal req_nop14    : std_logic_vector(7 downto 0);
+signal req_nop15    : std_logic_vector(7 downto 0);
+signal req_nop16    : std_logic_vector(7 downto 0);
+signal req_nop17    : std_logic_vector(7 downto 0);
+signal req_nop18    : std_logic_vector(7 downto 0);
+signal req_nop19    : std_logic_vector(7 downto 0);
+signal req_nop20    : std_logic_vector(7 downto 0);
+signal req_nop21    : std_logic_vector(7 downto 0);
+signal req_nop22    : std_logic_vector(7 downto 0);
+signal req_nop23    : std_logic_vector(7 downto 0);
+signal req_nop24    : std_logic_vector(7 downto 0);
+signal req_nop25    : std_logic_vector(7 downto 0);
+signal req_nop26    : std_logic_vector(7 downto 0);
+signal req_nop27    : std_logic_vector(7 downto 0);
+signal req_nop28    : std_logic_vector(7 downto 0);
+signal req_nop29    : std_logic_vector(7 downto 0);
+signal req_nop30    : std_logic_vector(7 downto 0);
+signal req_nop31    : std_logic_vector(7 downto 0);
+signal req_nop32    : std_logic_vector(7 downto 0);
+signal req_nop33    : std_logic_vector(7 downto 0);
+signal req_nop34    : std_logic_vector(7 downto 0);
+signal req_nop35    : std_logic_vector(7 downto 0);
+signal req_nop36    : std_logic_vector(7 downto 0);
+signal req_nop37    : std_logic_vector(7 downto 0);
+signal req_nop38    : std_logic_vector(7 downto 0);
+signal req_nop39    : std_logic_vector(7 downto 0);
+signal req_nop40    : std_logic_vector(7 downto 0);
+signal req_nop41    : std_logic_vector(7 downto 0);
+signal req_nop42    : std_logic_vector(7 downto 0);
+signal req_nop43    : std_logic_vector(7 downto 0);
+signal req_nop44    : std_logic_vector(7 downto 0);
+signal req_nop45    : std_logic_vector(7 downto 0);
+signal req_nop46    : std_logic_vector(7 downto 0);
+signal req_nop47    : std_logic_vector(7 downto 0);
+signal req_nop48    : std_logic_vector(7 downto 0);
+signal req_nop49    : std_logic_vector(7 downto 0);
+signal req_nop50    : std_logic_vector(7 downto 0);
+signal req_nop51    : std_logic_vector(7 downto 0);
+signal req_nop52    : std_logic_vector(7 downto 0);
+signal req_nop53    : std_logic_vector(7 downto 0);
+signal req_nop54    : std_logic_vector(7 downto 0);
+signal req_nop55    : std_logic_vector(7 downto 0);
+signal req_nop56    : std_logic_vector(7 downto 0);
+signal req_nop57    : std_logic_vector(7 downto 0);
+signal req_nop58    : std_logic_vector(7 downto 0);
+signal req_nop59    : std_logic_vector(7 downto 0);
+signal req_nop60    : std_logic_vector(7 downto 0);
+signal req_nop61    : std_logic_vector(7 downto 0);
+signal req_nop62    : std_logic_vector(7 downto 0);
+signal req_nop63    : std_logic_vector(7 downto 0);
+signal req_nop64    : std_logic_vector(7 downto 0);
+signal init_cntr    : std_logic_vector(7 downto 0);
+signal freeze_check    : std_logic;
+
+ 
+COMPONENT pgen_vhdl
+PORT(
+	din : IN std_logic;
+	clk : IN std_logic;          
+	dout : OUT std_logic
+	);
+END COMPONENT;
+
+	
+signal req_pw_mux    : std_logic_vector(31 downto 0);
+signal req_pri_mux    : std_logic_vector(31 downto 0);
+ 
+type state_type is ( st1,st2,st3);
+signal nextstate : state_type;
+
+begin
+
+  
+process(clk)
+begin
+if(rising_edge(clk))then
+  	if(reset = '1' )then
+  		pp_doutb01   <= x"00000000000000000000";
+  		pp_doutb02   <= x"00000000000000000000";
+  		pp_doutb03   <= x"00000000000000000000";
+  		pp_doutb04   <= x"00000000000000000000";
+  		pp_doutb05   <= x"00000000000000000000";
+  		pp_doutb06   <= x"00000000000000000000";
+  		pp_doutb07   <= x"00000000000000000000";
+  		pp_doutb08   <= x"00000000000000000000";  		
+  		pp_doutb09   <= x"00000000000000000000";  		
+  		pp_doutb10   <= x"00000000000000000000";  		
+  		pp_doutb11   <= x"00000000000000000000";
+  		pp_doutb12   <= x"00000000000000000000";
+  		pp_doutb13   <= x"00000000000000000000";
+  		pp_doutb14   <= x"00000000000000000000";
+  		pp_doutb15   <= x"00000000000000000000";
+  		pp_doutb16   <= x"00000000000000000000";
+  		pp_doutb17   <= x"00000000000000000000";
+  		pp_doutb18   <= x"00000000000000000000";  		
+  		pp_doutb19   <= x"00000000000000000000";  		
+  		pp_doutb20   <= x"00000000000000000000";  		
+  		pp_doutb21   <= x"00000000000000000000";
+  		pp_doutb22   <= x"00000000000000000000";
+  		pp_doutb23   <= x"00000000000000000000";
+  		pp_doutb24   <= x"00000000000000000000";
+  		pp_doutb25   <= x"00000000000000000000";
+  		pp_doutb26   <= x"00000000000000000000";
+  		pp_doutb27   <= x"00000000000000000000";
+  		pp_doutb28   <= x"00000000000000000000";  		
+  		pp_doutb29   <= x"00000000000000000000";  		
+  		pp_doutb30   <= x"00000000000000000000";  		
+  		pp_doutb31   <= x"00000000000000000000";
+  		pp_doutb32   <= x"00000000000000000000";
+  		pp_doutb33   <= x"00000000000000000000";
+  		pp_doutb34   <= x"00000000000000000000";
+  		pp_doutb35   <= x"00000000000000000000";
+  		pp_doutb36   <= x"00000000000000000000";
+  		pp_doutb37   <= x"00000000000000000000";
+  		pp_doutb38   <= x"00000000000000000000";  		
+  		pp_doutb39   <= x"00000000000000000000";  		
+  		pp_doutb40   <= x"00000000000000000000";  		
+  		pp_doutb41   <= x"00000000000000000000";
+  		pp_doutb42   <= x"00000000000000000000";
+  		pp_doutb43   <= x"00000000000000000000";
+  		pp_doutb44   <= x"00000000000000000000";
+  		pp_doutb45   <= x"00000000000000000000";
+  		pp_doutb46   <= x"00000000000000000000";
+  		pp_doutb47   <= x"00000000000000000000";
+  		pp_doutb48   <= x"00000000000000000000";  		
+  		pp_doutb49   <= x"00000000000000000000";  		
+  		pp_doutb50   <= x"00000000000000000000";  		
+  		pp_doutb51   <= x"00000000000000000000";
+  		pp_doutb52   <= x"00000000000000000000";
+  		pp_doutb53   <= x"00000000000000000000";
+  		pp_doutb54   <= x"00000000000000000000";
+  		pp_doutb55   <= x"00000000000000000000";
+  		pp_doutb56   <= x"00000000000000000000";
+  		pp_doutb57   <= x"00000000000000000000";
+  		pp_doutb58   <= x"00000000000000000000";  		
+  		pp_doutb59   <= x"00000000000000000000";  		
+  		pp_doutb60   <= x"00000000000000000000";  		
+  		pp_doutb61   <= x"00000000000000000000";
+  		pp_doutb62   <= x"00000000000000000000";
+  		pp_doutb63   <= x"00000000000000000000";
+  		pp_doutb64   <= x"00000000000000000000";
+  	elsif(pp_wr_ena = '1' and pp_addra = 0)then  		pp_doutb01   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 1)then  		pp_doutb02   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 2)then  		pp_doutb03   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 3)then  		pp_doutb04   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 4)then  		pp_doutb05   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 5)then  		pp_doutb06   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 6)then  		pp_doutb07   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 7)then  		pp_doutb08   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 8)then  		pp_doutb09   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 9)then  		pp_doutb10   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 10)then  		pp_doutb11   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 11)then  		pp_doutb12   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 12)then  		pp_doutb13   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 13)then  		pp_doutb14   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 14)then  		pp_doutb15   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 15)then  		pp_doutb16   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 16)then  		pp_doutb17   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 17)then  		pp_doutb18   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 18)then  		pp_doutb19   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 19)then  		pp_doutb20   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 20)then  		pp_doutb21   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 21)then  		pp_doutb22   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 22)then  		pp_doutb23   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 23)then  		pp_doutb24   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 24)then  		pp_doutb25   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 25)then  		pp_doutb26   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 26)then  		pp_doutb27   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 27)then  		pp_doutb28   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 28)then  		pp_doutb29   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 29)then  		pp_doutb30   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 30)then  		pp_doutb31   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 31)then  		pp_doutb32   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 32)then  		pp_doutb33   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 33)then  		pp_doutb34   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 34)then  		pp_doutb35   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 35)then  		pp_doutb36   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 36)then  		pp_doutb37   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 37)then  		pp_doutb38   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 38)then  		pp_doutb39   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 39)then  		pp_doutb40   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 40)then  		pp_doutb41   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 41)then  		pp_doutb42   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 42)then  		pp_doutb43   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 43)then  		pp_doutb44   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 44)then  		pp_doutb45   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 45)then  		pp_doutb46   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 46)then  		pp_doutb47   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 47)then  		pp_doutb48   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 48)then  		pp_doutb49   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 49)then  		pp_doutb50   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 50)then  		pp_doutb51   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 51)then  		pp_doutb52   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 52)then  		pp_doutb53   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 53)then  		pp_doutb54   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 54)then  		pp_doutb55   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 55)then  		pp_doutb56   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 56)then  		pp_doutb57   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 57)then  		pp_doutb58   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 58)then  		pp_doutb59   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 59)then  		pp_doutb60   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 60)then  		pp_doutb61   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 61)then  		pp_doutb62   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 62)then  		pp_doutb63   <= pp_dina;
+  	elsif(pp_wr_ena = '1' and pp_addra = 63)then  		pp_doutb64   <= pp_dina;
+  	end if;		
+end if;
+end process;
+	
+--process(clk)
+--begin
+--if(rising_edge(clk))then
+--  	if(reset = '1' or ENABLE = '0')then
+--  		pp_doutb01   <= (others => '0');
+--  		pp_doutb02   <= (others => '0');
+--  		pp_doutb03   <= (others => '0');
+--  		pp_doutb04   <= (others => '0');
+--  		pp_doutb05   <= (others => '0');
+--  		pp_doutb06   <= (others => '0');
+--  		pp_doutb07   <= (others => '0');
+--  		pp_doutb08   <= (others => '0');  		
+--  		pp_doutb09   <= (others => '0');  		
+--  		pp_doutb10   <= (others => '0');  		
+--  		pp_doutb11   <= (others => '0');
+--  		pp_doutb12   <= (others => '0');
+--  		pp_doutb13   <= (others => '0');
+--  		pp_doutb14   <= (others => '0');
+--  		pp_doutb15   <= (others => '0');
+--  		pp_doutb16   <= (others => '0');
+--  		pp_doutb17   <= (others => '0');
+--  		pp_doutb18   <= (others => '0');  		
+--  		pp_doutb19   <= (others => '0');  		
+--  		pp_doutb20   <= (others => '0');  		
+--  		pp_doutb21   <= (others => '0');
+--  		pp_doutb22   <= (others => '0');
+--  		pp_doutb23   <= (others => '0');
+--  		pp_doutb24   <= (others => '0');
+--  		pp_doutb25   <= (others => '0');
+--  		pp_doutb26   <= (others => '0');
+--  		pp_doutb27   <= (others => '0');
+--  		pp_doutb28   <= (others => '0');  		
+--  		pp_doutb29   <= (others => '0');  		
+--  		pp_doutb30   <= (others => '0');  		
+--  		pp_doutb31   <= (others => '0');
+--  		pp_doutb32   <= (others => '0');
+--  		pp_doutb33   <= (others => '0');
+--  		pp_doutb34   <= (others => '0');
+--  		pp_doutb35   <= (others => '0');
+--  		pp_doutb36   <= (others => '0');
+--  		pp_doutb37   <= (others => '0');
+--  		pp_doutb38   <= (others => '0');  		
+--  		pp_doutb39   <= (others => '0');  		
+--  		pp_doutb40   <= (others => '0');  		
+--  		pp_doutb41   <= (others => '0');
+--  		pp_doutb42   <= (others => '0');
+--  		pp_doutb43   <= (others => '0');
+--  		pp_doutb44   <= (others => '0');
+--  		pp_doutb45   <= (others => '0');
+--  		pp_doutb46   <= (others => '0');
+--  		pp_doutb47   <= (others => '0');
+--  		pp_doutb48   <= (others => '0');  		
+--  		pp_doutb49   <= (others => '0');  		
+--  		pp_doutb50   <= (others => '0');  		
+--  		pp_doutb51   <= (others => '0');
+--  		pp_doutb52   <= (others => '0');
+--  		pp_doutb53   <= (others => '0');
+--  		pp_doutb54   <= (others => '0');
+--  		pp_doutb55   <= (others => '0');
+--  		pp_doutb56   <= (others => '0');
+--  		pp_doutb57   <= (others => '0');
+--  		pp_doutb58   <= (others => '0');  		
+--  		pp_doutb59   <= (others => '0');  		
+--  		pp_doutb60   <= (others => '0');  		
+--  		pp_doutb61   <= (others => '0');
+--  		pp_doutb62   <= (others => '0');
+--  		pp_doutb63   <= (others => '0');
+--  		pp_doutb64   <= (others => '0');
+--  	elsif(freeze_check = '0' and pp_doutb01(71 downto 64) = 0 and fall_pulse_3 = '1' and toa_diff_1 /= 0 and pw_cntr_latch2 /= 0)then  		
+--  		  pp_doutb01   <= x"01" & toa_diff_1 & pw_cntr_latch1; 
+--	elsif(freeze_check = '0' and fall_pulse_3 = '1' and toa_diff_1 > pp_doutb01(63 downto 32) - x"64" and toa_diff_1 < pp_doutb01(63 downto 32) + x"64" )then  		
+--  		  pp_doutb01   <= x"01" & toa_diff_1 & pw_cntr_latch1;
+--  		  pp_doutb01(71 downto 64) <= pp_doutb01(71 downto 64) + '1';
+--  	elsif(freeze_check = '0' and pp_doutb02(71 downto 64) = 0 and fall_pulse_3 = '1'  and toa_diff_1 /= 0 and pw_cntr_latch2 /= 0)then  		
+--  		  pp_doutb02   <= x"01" & toa_diff_1 & pw_cntr_latch1; 
+--	elsif(freeze_check = '0' and fall_pulse_3 = '1' and toa_diff_1 > pp_doutb02(63 downto 32) - x"64" and toa_diff_1 < pp_doutb02(63 downto 32) + x"64" )then  		
+--  		  pp_doutb02   <= x"01" & toa_diff_1 & pw_cntr_latch1;
+--  		  pp_doutb02(71 downto 64) <= pp_doutb02(71 downto 64) + '1';
+--  	elsif(freeze_check = '0' and pp_doutb03(71 downto 64) = 0 and fall_pulse_3 = '1'  and toa_diff_1 /= 0 and pw_cntr_latch2 /= 0)then  		
+--  		  pp_doutb03   <= x"01" & toa_diff_1 & pw_cntr_latch1; 
+--	elsif(freeze_check = '0' and fall_pulse_3 = '1' and toa_diff_1 > pp_doutb03(63 downto 32) - x"64" and toa_diff_1 < pp_doutb03(63 downto 32) + x"64" )then  		
+--  		  pp_doutb03   <= x"01" & toa_diff_1 & pw_cntr_latch1;
+--  		  pp_doutb03(71 downto 64) <= pp_doutb03(71 downto 64) + '1';
+--  	elsif(freeze_check = '0' and pp_doutb04(71 downto 64) = 0 and fall_pulse_3 = '1'  and toa_diff_1 /= 0 and pw_cntr_latch2 /= 0)then  		
+--  		  pp_doutb04   <= x"01" & toa_diff_1 & pw_cntr_latch1; 
+--	elsif(freeze_check = '0' and fall_pulse_3 = '1' and toa_diff_1 > pp_doutb04(63 downto 32) - x"64" and toa_diff_1 < pp_doutb04(63 downto 32) + x"64" )then  		
+--  		  pp_doutb04   <= x"01" & toa_diff_1 & pw_cntr_latch1;
+--  		  pp_doutb04(71 downto 64) <= pp_doutb04(71 downto 64) + '1';
+--  	elsif(freeze_check = '0' and pp_doutb05(71 downto 64) = 0 and fall_pulse_3 = '1'  and toa_diff_1 /= 0 and pw_cntr_latch2 /= 0)then  		
+--  		  pp_doutb05   <= x"01" & toa_diff_1 & pw_cntr_latch1; 
+--	elsif(freeze_check = '0' and fall_pulse_3 = '1' and toa_diff_1 > pp_doutb05(63 downto 32) - x"64" and toa_diff_1 < pp_doutb05(63 downto 32) + x"64" )then  		
+--  		  pp_doutb05   <= x"01" & toa_diff_1 & pw_cntr_latch1;
+--  		  pp_doutb05(71 downto 64) <= pp_doutb05(71 downto 64) + '1';
+--  	elsif(freeze_check = '0' and pp_doutb06(71 downto 64) = 0 and fall_pulse_3 = '1'  and toa_diff_1 /= 0 and pw_cntr_latch2 /= 0)then  		
+--  		  pp_doutb06   <= x"01" & toa_diff_1 & pw_cntr_latch1; 
+--	elsif(freeze_check = '0' and fall_pulse_3 = '1' and toa_diff_1 > pp_doutb06(63 downto 32) - x"64" and toa_diff_1 < pp_doutb06(63 downto 32) + x"64" )then  		
+--  		  pp_doutb06   <= x"01" & toa_diff_1 & pw_cntr_latch1;
+--  		  pp_doutb06(71 downto 64) <= pp_doutb06(71 downto 64) + '1';
+--  	elsif(freeze_check = '0' and pp_doutb07(71 downto 64) = 0 and fall_pulse_3 = '1'  and toa_diff_1 /= 0 and pw_cntr_latch2 /= 0)then  		
+--  		  pp_doutb07   <= x"01" & toa_diff_1 & pw_cntr_latch1; 
+--	elsif(freeze_check = '0' and fall_pulse_3 = '1' and toa_diff_1 > pp_doutb07(63 downto 32) - x"64" and toa_diff_1 < pp_doutb07(63 downto 32) + x"64" )then  		
+--  		  pp_doutb07   <= x"01" & toa_diff_1 & pw_cntr_latch1;
+--  		  pp_doutb07(71 downto 64) <= pp_doutb07(71 downto 64) + '1';
+--  	elsif(freeze_check = '0' and pp_doutb08(71 downto 64) = 0 and fall_pulse_3 = '1'  and toa_diff_1 /= 0 and pw_cntr_latch2 /= 0)then  		
+--  		  pp_doutb08   <= x"01" & toa_diff_1 & pw_cntr_latch1; 
+--	elsif(freeze_check = '0' and fall_pulse_3 = '1' and toa_diff_1 > pp_doutb08(63 downto 32) - x"64" and toa_diff_1 < pp_doutb08(63 downto 32) + x"64" )then  		
+--  		  pp_doutb08   <= x"01" & toa_diff_1 & pw_cntr_latch1;
+--  		  pp_doutb08(71 downto 64) <= pp_doutb08(71 downto 64) + '1';
+--  	elsif(freeze_check = '0' and pp_doutb09(71 downto 64) = 0 and fall_pulse_3 = '1' and toa_diff_1 /= 0 and pw_cntr_latch2 /= 0)then  		
+--  		  pp_doutb09   <= x"01" & toa_diff_1 & pw_cntr_latch1; 
+--	elsif(freeze_check = '0' and fall_pulse_3 = '1' and toa_diff_1 > pp_doutb09(63 downto 32) - x"64" and toa_diff_1 < pp_doutb09(63 downto 32) + x"64" )then  		
+--  		  pp_doutb09   <= x"01" & toa_diff_1 & pw_cntr_latch1;
+--  		  pp_doutb09(71 downto 64) <= pp_doutb09(71 downto 64) + '1';  		  	
+--  	end if;		
+--end if;
+--end process;	
+  
+req_nop01  	<= pp_doutb01(71 downto 64);
+req_nop02  	<= pp_doutb02(71 downto 64);
+req_nop03  	<= pp_doutb03(71 downto 64);
+req_nop04  	<= pp_doutb04(71 downto 64);
+req_nop05  	<= pp_doutb05(71 downto 64);
+req_nop06  	<= pp_doutb06(71 downto 64);
+req_nop07  	<= pp_doutb07(71 downto 64);
+req_nop08  	<= pp_doutb08(71 downto 64);
+req_nop09  	<= pp_doutb09(71 downto 64);
+req_nop10  	<= pp_doutb10(71 downto 64);
+req_nop11  	<= pp_doutb11(71 downto 64);
+req_nop12  	<= pp_doutb12(71 downto 64);
+req_nop13  	<= pp_doutb13(71 downto 64);
+req_nop14  	<= pp_doutb14(71 downto 64);
+req_nop15  	<= pp_doutb15(71 downto 64);
+req_nop16  	<= pp_doutb16(71 downto 64);
+req_nop17  	<= pp_doutb17(71 downto 64);
+req_nop18  	<= pp_doutb18(71 downto 64);
+req_nop19  	<= pp_doutb19(71 downto 64);
+req_nop20  	<= pp_doutb20(71 downto 64);
+req_nop21  	<= pp_doutb21(71 downto 64);
+req_nop22  	<= pp_doutb22(71 downto 64);
+req_nop23  	<= pp_doutb23(71 downto 64);
+req_nop24  	<= pp_doutb24(71 downto 64);
+req_nop25  	<= pp_doutb25(71 downto 64);
+req_nop26  	<= pp_doutb26(71 downto 64);
+req_nop27  	<= pp_doutb27(71 downto 64);
+req_nop28  	<= pp_doutb28(71 downto 64);
+req_nop29  	<= pp_doutb29(71 downto 64);
+req_nop30  	<= pp_doutb30(71 downto 64);
+req_nop31  	<= pp_doutb31(71 downto 64);
+req_nop32  	<= pp_doutb32(71 downto 64);
+req_nop33  	<= pp_doutb33(71 downto 64);
+req_nop34  	<= pp_doutb34(71 downto 64);
+req_nop35  	<= pp_doutb35(71 downto 64);
+req_nop36  	<= pp_doutb36(71 downto 64);
+req_nop37  	<= pp_doutb37(71 downto 64);
+req_nop38  	<= pp_doutb38(71 downto 64);
+req_nop39  	<= pp_doutb39(71 downto 64);
+req_nop40  	<= pp_doutb40(71 downto 64);
+req_nop41  	<= pp_doutb41(71 downto 64);
+req_nop42  	<= pp_doutb42(71 downto 64);
+req_nop43  	<= pp_doutb43(71 downto 64);
+req_nop44  	<= pp_doutb44(71 downto 64);
+req_nop45  	<= pp_doutb45(71 downto 64);
+req_nop46  	<= pp_doutb46(71 downto 64);
+req_nop47  	<= pp_doutb47(71 downto 64);
+req_nop48  	<= pp_doutb48(71 downto 64);
+req_nop49  	<= pp_doutb49(71 downto 64);
+req_nop50  	<= pp_doutb50(71 downto 64);
+req_nop51  	<= pp_doutb51(71 downto 64);
+req_nop52  	<= pp_doutb52(71 downto 64);
+req_nop53  	<= pp_doutb53(71 downto 64);
+req_nop54  	<= pp_doutb54(71 downto 64);
+req_nop55  	<= pp_doutb55(71 downto 64);
+req_nop56  	<= pp_doutb56(71 downto 64);
+req_nop57  	<= pp_doutb57(71 downto 64);
+req_nop58  	<= pp_doutb58(71 downto 64);
+req_nop59  	<= pp_doutb59(71 downto 64);
+req_nop60  	<= pp_doutb60(71 downto 64);
+req_nop61  	<= pp_doutb61(71 downto 64);
+req_nop62  	<= pp_doutb62(71 downto 64);
+req_nop63  	<= pp_doutb63(71 downto 64);
+req_nop64  	<= pp_doutb64(71 downto 64);
+
+
+req_pri01 	<= pp_doutb01(63 downto 32);
+req_pri02 	<= pp_doutb02(63 downto 32);
+req_pri03 	<= pp_doutb03(63 downto 32);
+req_pri04 	<= pp_doutb04(63 downto 32);
+req_pri05 	<= pp_doutb05(63 downto 32);
+req_pri06 	<= pp_doutb06(63 downto 32);
+req_pri07 	<= pp_doutb07(63 downto 32);
+req_pri08 	<= pp_doutb08(63 downto 32);
+req_pri09 	<= pp_doutb09(63 downto 32);
+req_pri10 	<= pp_doutb10(63 downto 32);
+req_pri11 	<= pp_doutb11(63 downto 32);
+req_pri12 	<= pp_doutb12(63 downto 32);
+req_pri13 	<= pp_doutb13(63 downto 32);
+req_pri14 	<= pp_doutb14(63 downto 32);
+req_pri15 	<= pp_doutb15(63 downto 32);
+req_pri16 	<= pp_doutb16(63 downto 32);
+req_pri17 	<= pp_doutb17(63 downto 32);
+req_pri18 	<= pp_doutb18(63 downto 32);
+req_pri19 	<= pp_doutb19(63 downto 32);
+req_pri20 	<= pp_doutb20(63 downto 32);
+req_pri21 	<= pp_doutb21(63 downto 32);
+req_pri22 	<= pp_doutb22(63 downto 32);
+req_pri23 	<= pp_doutb23(63 downto 32);
+req_pri24 	<= pp_doutb24(63 downto 32);
+req_pri25 	<= pp_doutb25(63 downto 32);
+req_pri26 	<= pp_doutb26(63 downto 32);
+req_pri27 	<= pp_doutb27(63 downto 32);
+req_pri28 	<= pp_doutb28(63 downto 32);
+req_pri29 	<= pp_doutb29(63 downto 32);
+req_pri30 	<= pp_doutb30(63 downto 32);
+req_pri31 	<= pp_doutb31(63 downto 32);
+req_pri32 	<= pp_doutb32(63 downto 32);
+req_pri33 	<= pp_doutb33(63 downto 32);
+req_pri34 	<= pp_doutb34(63 downto 32);
+req_pri35 	<= pp_doutb35(63 downto 32);
+req_pri36 	<= pp_doutb36(63 downto 32);
+req_pri37 	<= pp_doutb37(63 downto 32);
+req_pri38 	<= pp_doutb38(63 downto 32);
+req_pri39 	<= pp_doutb39(63 downto 32);
+req_pri40 	<= pp_doutb40(63 downto 32);
+req_pri41 	<= pp_doutb41(63 downto 32);
+req_pri42 	<= pp_doutb42(63 downto 32);
+req_pri43 	<= pp_doutb43(63 downto 32);
+req_pri44 	<= pp_doutb44(63 downto 32);
+req_pri45 	<= pp_doutb45(63 downto 32);
+req_pri46 	<= pp_doutb46(63 downto 32);
+req_pri47 	<= pp_doutb47(63 downto 32);
+req_pri48 	<= pp_doutb48(63 downto 32);
+req_pri49 	<= pp_doutb49(63 downto 32);
+req_pri50 	<= pp_doutb50(63 downto 32);
+req_pri51 	<= pp_doutb51(63 downto 32);
+req_pri52 	<= pp_doutb52(63 downto 32);
+req_pri53 	<= pp_doutb53(63 downto 32);
+req_pri54 	<= pp_doutb54(63 downto 32);
+req_pri55 	<= pp_doutb55(63 downto 32);
+req_pri56 	<= pp_doutb56(63 downto 32);
+req_pri57 	<= pp_doutb57(63 downto 32);
+req_pri58 	<= pp_doutb58(63 downto 32);
+req_pri59 	<= pp_doutb59(63 downto 32);
+req_pri60 	<= pp_doutb60(63 downto 32);
+req_pri61 	<= pp_doutb61(63 downto 32);
+req_pri62 	<= pp_doutb62(63 downto 32);
+req_pri63 	<= pp_doutb63(63 downto 32);
+req_pri64 	<= pp_doutb64(63 downto 32);
+
+
+
+req_pw01  	<= pp_doutb01(31 downto 0);
+req_pw02  	<= pp_doutb02(31 downto 0);
+req_pw03  	<= pp_doutb03(31 downto 0);
+req_pw04  	<= pp_doutb04(31 downto 0);
+req_pw05  	<= pp_doutb05(31 downto 0);
+req_pw06  	<= pp_doutb06(31 downto 0);
+req_pw07  	<= pp_doutb07(31 downto 0);
+req_pw08  	<= pp_doutb08(31 downto 0);
+req_pw09  	<= pp_doutb09(31 downto 0);
+req_pw10  	<= pp_doutb10(31 downto 0);
+req_pw11  	<= pp_doutb11(31 downto 0);
+req_pw12  	<= pp_doutb12(31 downto 0);
+req_pw13  	<= pp_doutb13(31 downto 0);
+req_pw14  	<= pp_doutb14(31 downto 0);
+req_pw15  	<= pp_doutb15(31 downto 0);
+req_pw16  	<= pp_doutb16(31 downto 0);
+req_pw17  	<= pp_doutb17(31 downto 0);
+req_pw18  	<= pp_doutb18(31 downto 0);
+req_pw19  	<= pp_doutb19(31 downto 0);
+req_pw20  	<= pp_doutb20(31 downto 0);
+req_pw21  	<= pp_doutb21(31 downto 0);
+req_pw22  	<= pp_doutb22(31 downto 0);
+req_pw23  	<= pp_doutb23(31 downto 0);
+req_pw24  	<= pp_doutb24(31 downto 0);
+req_pw25  	<= pp_doutb25(31 downto 0);
+req_pw26  	<= pp_doutb26(31 downto 0);
+req_pw27  	<= pp_doutb27(31 downto 0);
+req_pw28  	<= pp_doutb28(31 downto 0);
+req_pw29  	<= pp_doutb29(31 downto 0);
+req_pw30  	<= pp_doutb30(31 downto 0);
+req_pw31  	<= pp_doutb31(31 downto 0);
+req_pw32  	<= pp_doutb32(31 downto 0);
+req_pw33  	<= pp_doutb33(31 downto 0);
+req_pw34  	<= pp_doutb34(31 downto 0);
+req_pw35  	<= pp_doutb35(31 downto 0);
+req_pw36  	<= pp_doutb36(31 downto 0);
+req_pw37  	<= pp_doutb37(31 downto 0);
+req_pw38  	<= pp_doutb38(31 downto 0);
+req_pw39  	<= pp_doutb39(31 downto 0);
+req_pw40  	<= pp_doutb40(31 downto 0);
+req_pw41  	<= pp_doutb41(31 downto 0);
+req_pw42  	<= pp_doutb42(31 downto 0);
+req_pw43  	<= pp_doutb43(31 downto 0);
+req_pw44  	<= pp_doutb44(31 downto 0);
+req_pw45  	<= pp_doutb45(31 downto 0);
+req_pw46  	<= pp_doutb46(31 downto 0);
+req_pw47  	<= pp_doutb47(31 downto 0);
+req_pw48  	<= pp_doutb48(31 downto 0);
+req_pw49  	<= pp_doutb49(31 downto 0);
+req_pw50  	<= pp_doutb50(31 downto 0);
+req_pw51  	<= pp_doutb51(31 downto 0);
+req_pw52  	<= pp_doutb52(31 downto 0);
+req_pw53  	<= pp_doutb53(31 downto 0);
+req_pw54  	<= pp_doutb54(31 downto 0);
+req_pw55  	<= pp_doutb55(31 downto 0);
+req_pw56  	<= pp_doutb56(31 downto 0);
+req_pw57  	<= pp_doutb57(31 downto 0);
+req_pw58  	<= pp_doutb58(31 downto 0);
+req_pw59  	<= pp_doutb59(31 downto 0);
+req_pw60  	<= pp_doutb60(31 downto 0);
+req_pw61  	<= pp_doutb61(31 downto 0);
+req_pw62  	<= pp_doutb62(31 downto 0);
+req_pw63  	<= pp_doutb63(31 downto 0);
+req_pw64  	<= pp_doutb64(31 downto 0);
+
+process(clk)
+begin
+if(rising_edge(clk))then
+	if(reset = '1')then
+		toa_cntr   <= x"00000000";
+	else
+		toa_cntr   <= toa_cntr + '1';
+	end if;		 
+end if;
+end process;
+		 
+
+process(clk)
+begin
+if(rising_edge(clk))then
+	pulse_in_1  <= pulse_in;
+	pulse_in_2  <= pulse_in_1;
+end if;
+end process;
+
+
+pgen_vhdl1: pgen_vhdl PORT MAP(
+	din => not pulse_in,
+	clk => clk,
+	dout => fall_pulse_1
+);
+
+
+process(clk)
+begin
+if(rising_edge(clk))then
+	fall_pulse_2 <= fall_pulse_1;
+	fall_pulse_3 <= fall_pulse_2;
+	fall_pulse_4 <= fall_pulse_3;	
+end if;
+end process;	
+
+	
+
+process(clk)
+begin
+if(rising_edge(clk))then
+		toa_diff_1      <= toa_cntr_latch1 - toa_cntr_latch2; 
+		toa_diff_2      <= toa_cntr_latch2 - toa_cntr_latch3; 
+		toa_diff_3      <= toa_cntr_latch3 - toa_cntr_latch4; 
+		toa_diff_4      <= toa_cntr_latch4 - toa_cntr_latch5; 
+		toa_diff_5      <= toa_cntr_latch5 - toa_cntr_latch6; 
+		toa_diff_6      <= toa_cntr_latch6 - toa_cntr_latch7; 
+		toa_diff_7      <= toa_cntr_latch7 - toa_cntr_latch8; 
+		toa_diff_8      <= toa_cntr_latch8 - toa_cntr_latch9;		
+	if(reset = '1')then
+		toa_cntr_latch1 <= x"00000000";
+		toa_cntr_latch2 <= x"00000000";
+		toa_cntr_latch3 <= x"00000000";
+		toa_cntr_latch4 <= x"00000000";
+		toa_cntr_latch5 <= x"00000000";
+		toa_cntr_latch6 <= x"00000000";
+		toa_cntr_latch7 <= x"00000000";
+		toa_cntr_latch8 <= x"00000000";			
+		toa_cntr_latch9 <= x"00000000";			
+	elsif(pulse_in_2 = '0' and pulse_in_1 = '1')then
+		toa_cntr_latch1 <= toa_cntr;
+		toa_cntr_latch2 <= toa_cntr_latch1;
+		toa_cntr_latch3 <= toa_cntr_latch2;
+		toa_cntr_latch4 <= toa_cntr_latch3;
+		toa_cntr_latch5 <= toa_cntr_latch4;
+		toa_cntr_latch6 <= toa_cntr_latch5;
+		toa_cntr_latch7 <= toa_cntr_latch6;
+		toa_cntr_latch8 <= toa_cntr_latch7;
+		toa_cntr_latch9 <= toa_cntr_latch8;		 
+	end if;		
+end if;
+end process;		
+
+
+
+	
+
+process(clk)
+begin
+if(rising_edge(clk))then
+	if(reset = '1')then
+		pw_cntr 		<= x"00000000";
+		pw_cntr_latch1 	<= x"00000000";
+		pw_cntr_latch2 	<= x"00000000";
+		pw_cntr_latch3 	<= x"00000000";
+		pw_cntr_latch4 	<= x"00000000";
+		pw_cntr_latch5 	<= x"00000000";
+		pw_cntr_latch6 	<= x"00000000";
+		pw_cntr_latch7 	<= x"00000000";
+		pw_cntr_latch8 	<= x"00000000";		
+	elsif(pulse_in_2 = '0' and pulse_in_1 = '1')then
+		pw_cntr <= x"00000000";
+	elsif(pulse_in_2 = '1' and pulse_in_1 = '0')then
+		pw_cntr_latch1 <= pw_cntr;
+		pw_cntr_latch2 <= pw_cntr_latch1;
+		pw_cntr_latch3 <= pw_cntr_latch2;
+		pw_cntr_latch4 <= pw_cntr_latch3;
+		pw_cntr_latch5 <= pw_cntr_latch4;
+		pw_cntr_latch6 <= pw_cntr_latch5;
+		pw_cntr_latch7 <= pw_cntr_latch6;
+		pw_cntr_latch8 <= pw_cntr_latch7;
+	elsif(pulse_in_2 = '1')then
+		pw_cntr    <= pw_cntr + '1';
+	end if;		
+end if;		
+end process;
+
+
+
+process( CLK,RESET,nextstate )
+  begin
+   if ( RESET = '1') then		
+		nextstate 		<= st1;
+		cnt_a 			<= (others => '0') ; 			
+		cnt_b 			<= (others => '0') ; 
+		cnt_c 			<= (others => '0') ; 
+		cnt_d 			<= (others => '0') ; 
+   elsif (CLK' event and CLK = '1') then
+   case nextstate is			  
+					
+     when st1 =>
+	  			   cnt_a 						<= (others => '0') ; 			
+				   cnt_b 						<= (others => '0') ; 
+				   cnt_c 						<= (others => '0') ; 
+				   cnt_d 						<= (others => '0') ; 
+				   
+				   look_pass_cntr01 			<= (others => '0') ; 
+				   look_pass_cntr02 			<= (others => '0') ; 
+				   look_pass_cntr03 			<= (others => '0') ; 
+				   look_pass_cntr04 			<= (others => '0') ; 
+				   look_pass_cntr05 			<= (others => '0') ; 
+				   look_pass_cntr06 			<= (others => '0') ; 
+				   look_pass_cntr07 			<= (others => '0') ; 
+				   look_pass_cntr08 			<= (others => '0') ; 
+				   look_pass_cntr09 			<= (others => '0') ; 
+				   look_pass_cntr10 			<= (others => '0') ; 
+				   look_pass_cntr11 			<= (others => '0') ; 
+				   look_pass_cntr12 			<= (others => '0') ; 
+				   look_pass_cntr13 			<= (others => '0') ; 
+				   look_pass_cntr14 			<= (others => '0') ; 
+				   look_pass_cntr15 			<= (others => '0') ; 
+				   look_pass_cntr16 			<= (others => '0') ; 
+				   look_pass_cntr17 			<= (others => '0') ; 
+				   look_pass_cntr18 			<= (others => '0') ; 
+				   look_pass_cntr19 			<= (others => '0') ; 
+				   look_pass_cntr20 			<= (others => '0') ; 
+				   look_pass_cntr21 			<= (others => '0') ; 
+				   look_pass_cntr22 			<= (others => '0') ; 
+				   look_pass_cntr23 			<= (others => '0') ; 
+				   look_pass_cntr24 			<= (others => '0') ; 
+				   look_pass_cntr25 			<= (others => '0') ; 
+				   look_pass_cntr26 			<= (others => '0') ; 
+				   look_pass_cntr27 			<= (others => '0') ; 
+				   look_pass_cntr28 			<= (others => '0') ; 
+				   look_pass_cntr29 			<= (others => '0') ; 
+				   look_pass_cntr30 			<= (others => '0') ; 
+				   look_pass_cntr31 			<= (others => '0') ; 
+				   look_pass_cntr32 			<= (others => '0') ; 
+				   look_pass_cntr33 			<= (others => '0') ; 
+				   look_pass_cntr34 			<= (others => '0') ; 
+				   look_pass_cntr35 			<= (others => '0') ; 
+				   look_pass_cntr36 			<= (others => '0') ; 
+				   look_pass_cntr37 			<= (others => '0') ; 
+				   look_pass_cntr38 			<= (others => '0') ; 
+				   look_pass_cntr39 			<= (others => '0') ; 
+				   look_pass_cntr40 			<= (others => '0') ; 
+				   look_pass_cntr41 			<= (others => '0') ; 
+				   look_pass_cntr42 			<= (others => '0') ; 
+				   look_pass_cntr43 			<= (others => '0') ; 
+				   look_pass_cntr44 			<= (others => '0') ; 
+				   look_pass_cntr45 			<= (others => '0') ; 
+				   look_pass_cntr46 			<= (others => '0') ; 
+				   look_pass_cntr47 			<= (others => '0') ; 
+				   look_pass_cntr48 			<= (others => '0') ; 
+				   look_pass_cntr49 			<= (others => '0') ; 
+				   look_pass_cntr50 			<= (others => '0') ; 
+				   look_pass_cntr51 			<= (others => '0') ; 
+				   look_pass_cntr52 			<= (others => '0') ; 
+				   look_pass_cntr53 			<= (others => '0') ; 
+				   look_pass_cntr54 			<= (others => '0') ; 
+				   look_pass_cntr55 			<= (others => '0') ; 
+				   look_pass_cntr56 			<= (others => '0') ; 
+				   look_pass_cntr57 			<= (others => '0') ; 
+				   look_pass_cntr58 			<= (others => '0') ; 
+				   look_pass_cntr59 			<= (others => '0') ; 
+				   look_pass_cntr60 			<= (others => '0') ; 
+				   look_pass_cntr61 			<= (others => '0') ; 
+				   look_pass_cntr62 			<= (others => '0') ; 
+				   look_pass_cntr63 			<= (others => '0') ; 
+				   look_pass_cntr64 			<= (others => '0') ; 
+				   freeze_check					<= '0';
+				   
+				   jamm_pass_cntr 				<= (others => '0') ;
+				   preamble_pulse   			<= '0' ;   
+   					
+					if( ENABLE = '1' and Stagger_PRI = '1') then
+						nextstate 		<= st2 ;
+					end if ;				
+						
+	 when st2 =>	 
+	 				cnt_a 		<= cnt_a + '1'; 	
+	 				pp_rd_ena	<= '0';			
+
+	 				
+	 				if(fall_pulse_4 = '1')then
+	 					if(pw_cntr_latch1 > (req_pw01 - x"64") and pw_cntr_latch1 < (req_pw01 + x"64"))then
+	 					if(toa_diff_1 > (req_pri01 - x"64") and toa_diff_1 < (req_pri01 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"01";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw02 - x"64") and pw_cntr_latch1 < (req_pw02 + x"64"))then
+	 					if(toa_diff_1 > (req_pri02 - x"64") and toa_diff_1 < (req_pri02 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"02";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw03 - x"64") and pw_cntr_latch1 < (req_pw03 + x"64"))then
+	 					if(toa_diff_1 > (req_pri03 - x"64") and toa_diff_1 < (req_pri03 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"03";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw04 - x"64") and pw_cntr_latch1 < (req_pw04 + x"64"))then
+	 					if(toa_diff_1 > (req_pri04 - x"64") and toa_diff_1 < (req_pri04 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"04";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw05 - x"64") and pw_cntr_latch1 < (req_pw05 + x"64"))then
+	 					if(toa_diff_1 > (req_pri05 - x"64") and toa_diff_1 < (req_pri05 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"05";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw06 - x"64") and pw_cntr_latch1 < (req_pw06 + x"64"))then
+	 					if(toa_diff_1 > (req_pri06 - x"64") and toa_diff_1 < (req_pri06 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"06";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw07 - x"64") and pw_cntr_latch1 < (req_pw07 + x"64"))then
+	 					if(toa_diff_1 > (req_pri07 - x"64") and toa_diff_1 < (req_pri07 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"07";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw08 - x"64") and pw_cntr_latch1 < (req_pw08 + x"64"))then
+	 					if(toa_diff_1 > (req_pri08 - x"64") and toa_diff_1 < (req_pri08 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"08";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw09 - x"64") and pw_cntr_latch1 < (req_pw09 + x"64"))then
+	 					if(toa_diff_1 > (req_pri09 - x"64") and toa_diff_1 < (req_pri09 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"09";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw10 - x"64") and pw_cntr_latch1 < (req_pw10 + x"64"))then
+	 					if(toa_diff_1 > (req_pri10 - x"64") and toa_diff_1 < (req_pri10 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"0A";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw11 - x"64") and pw_cntr_latch1 < (req_pw11 + x"64"))then
+	 					if(toa_diff_1 > (req_pri11 - x"64") and toa_diff_1 < (req_pri11 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"0B";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw12 - x"64") and pw_cntr_latch1 < (req_pw12 + x"64"))then
+	 					if(toa_diff_1 > (req_pri12 - x"64") and toa_diff_1 < (req_pri12 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"0C";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw13 - x"64") and pw_cntr_latch1 < (req_pw13 + x"64"))then
+	 					if(toa_diff_1 > (req_pri13 - x"64") and toa_diff_1 < (req_pri13 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"0D";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw14 - x"64") and pw_cntr_latch1 < (req_pw14 + x"64"))then
+	 					if(toa_diff_1 > (req_pri14 - x"64") and toa_diff_1 < (req_pri14 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"0E";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw15 - x"64") and pw_cntr_latch1 < (req_pw15 + x"64"))then
+	 					if(toa_diff_1 > (req_pri15 - x"64") and toa_diff_1 < (req_pri15 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"0F";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw16 - x"64") and pw_cntr_latch1 < (req_pw16 + x"64"))then
+	 					if(toa_diff_1 > (req_pri16 - x"64") and toa_diff_1 < (req_pri16 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"10";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw17 - x"64") and pw_cntr_latch1 < (req_pw17 + x"64"))then
+	 					if(toa_diff_1 > (req_pri17 - x"64") and toa_diff_1 < (req_pri17 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"11";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw18 - x"64") and pw_cntr_latch1 < (req_pw18 + x"64"))then
+	 					if(toa_diff_1 > (req_pri18 - x"64") and toa_diff_1 < (req_pri18 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"12";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw19 - x"64") and pw_cntr_latch1 < (req_pw19 + x"64"))then
+	 					if(toa_diff_1 > (req_pri19 - x"64") and toa_diff_1 < (req_pri19 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"13";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw20 - x"64") and pw_cntr_latch1 < (req_pw20 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri20 - x"64") and toa_diff_1 <    (req_pri20 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"14";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw21 - x"64") and pw_cntr_latch1 < (req_pw21 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri21 - x"64") and toa_diff_1 <    (req_pri21 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"15";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw22 - x"64") and pw_cntr_latch1 < (req_pw22 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri22 - x"64") and toa_diff_1 <    (req_pri22 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"16";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw23 - x"64") and pw_cntr_latch1 < (req_pw23 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri23 - x"64") and toa_diff_1 <    (req_pri23 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"17";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw24 - x"64") and pw_cntr_latch1 < (req_pw24 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri24 - x"64") and toa_diff_1 <    (req_pri24 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"18";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw25 - x"64") and pw_cntr_latch1 < (req_pw25 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri25 - x"64") and toa_diff_1 <    (req_pri25 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"19";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw26 - x"64") and pw_cntr_latch1 < (req_pw26 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri26 - x"64") and toa_diff_1 <    (req_pri26 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"1A";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw27 - x"64") and pw_cntr_latch1 < (req_pw27 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri27 - x"64") and toa_diff_1 <    (req_pri27 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"1B";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw28 - x"64") and pw_cntr_latch1 < (req_pw28 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri28 - x"64") and toa_diff_1 <    (req_pri28 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"1C";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw29 - x"64") and pw_cntr_latch1 < (req_pw29 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri29 - x"64") and toa_diff_1 <    (req_pri29 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"1D";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw30 - x"64") and pw_cntr_latch1 < (req_pw30 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri30 - x"64") and toa_diff_1 <    (req_pri30 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"1E";
+	 					end if;
+						end if;	 					
+						if(pw_cntr_latch1 > (req_pw31 - x"64") and pw_cntr_latch1 < (req_pw31 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri31 - x"64") and toa_diff_1 <    (req_pri31 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"1F";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw32 - x"64") and pw_cntr_latch1 < (req_pw32 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri32 - x"64") and toa_diff_1 <    (req_pri32 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"20";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw33 - x"64") and pw_cntr_latch1 < (req_pw33 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri33 - x"64") and toa_diff_1 <    (req_pri33 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"21";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw34 - x"64") and pw_cntr_latch1 < (req_pw34 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri34 - x"64") and toa_diff_1 <    (req_pri34 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"22";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw35 - x"64") and pw_cntr_latch1 < (req_pw35 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri35 - x"64") and toa_diff_1 <    (req_pri35 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"23";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw36 - x"64") and pw_cntr_latch1 < (req_pw36 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri36 - x"64") and toa_diff_1 <    (req_pri36 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"24";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw37 - x"64") and pw_cntr_latch1 < (req_pw37 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri37 - x"64") and toa_diff_1 <    (req_pri37 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"25";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw38 - x"64") and pw_cntr_latch1 < (req_pw38 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri38 - x"64") and toa_diff_1 <    (req_pri38 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"26";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw39 - x"64") and pw_cntr_latch1 < (req_pw39 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri39 - x"64") and toa_diff_1 <    (req_pri39 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"27";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw40 - x"64") and pw_cntr_latch1 < (req_pw40 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri40 - x"64") and toa_diff_1 <    (req_pri40 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"28";
+	 					end if;
+						end if;
+						if(pw_cntr_latch1 > (req_pw41 - x"64") and pw_cntr_latch1 < (req_pw41 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri41 - x"64") and toa_diff_1 <    (req_pri41 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"29";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw42 - x"64") and pw_cntr_latch1 < (req_pw42 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri42 - x"64") and toa_diff_1 <    (req_pri42 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"2A";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw43 - x"64") and pw_cntr_latch1 < (req_pw43 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri43 - x"64") and toa_diff_1 <    (req_pri43 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"2B";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw44 - x"64") and pw_cntr_latch1 < (req_pw44 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri44 - x"64") and toa_diff_1 <    (req_pri44 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"2C";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw45 - x"64") and pw_cntr_latch1 < (req_pw45 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri45 - x"64") and toa_diff_1 <    (req_pri45 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"2D";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw46 - x"64") and pw_cntr_latch1 < (req_pw46 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri46 - x"64") and toa_diff_1 <    (req_pri46 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"2E";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw47 - x"64") and pw_cntr_latch1 < (req_pw47 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri47 - x"64") and toa_diff_1 <    (req_pri47 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"2F";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw48 - x"64") and pw_cntr_latch1 < (req_pw48 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri48 - x"64") and toa_diff_1 <    (req_pri48 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"30";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw49 - x"64") and pw_cntr_latch1 < (req_pw49 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri49 - x"64") and toa_diff_1 <    (req_pri49 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"31";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw50 - x"64") and pw_cntr_latch1 < (req_pw50 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri50 - x"64") and toa_diff_1 <    (req_pri50 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"32";
+	 					end if;
+						end if;
+						if(pw_cntr_latch1 > (req_pw51 - x"64") and pw_cntr_latch1 < (req_pw51 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri51 - x"64") and toa_diff_1 <    (req_pri51 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"33";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw52 - x"64") and pw_cntr_latch1 < (req_pw52 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri52 - x"64") and toa_diff_1 <    (req_pri52 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"34";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw53 - x"64") and pw_cntr_latch1 < (req_pw53 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri53 - x"64") and toa_diff_1 <    (req_pri53 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"35";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw54 - x"64") and pw_cntr_latch1 < (req_pw54 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri54 - x"64") and toa_diff_1 <    (req_pri54 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"36";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw55 - x"64") and pw_cntr_latch1 < (req_pw55 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri55 - x"64") and toa_diff_1 <    (req_pri55 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"37";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw56 - x"64") and pw_cntr_latch1 < (req_pw56 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri56 - x"64") and toa_diff_1 <    (req_pri56 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"38";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw57 - x"64") and pw_cntr_latch1 < (req_pw57 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri57 - x"64") and toa_diff_1 <    (req_pri57 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"39";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw58 - x"64") and pw_cntr_latch1 < (req_pw58 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri58 - x"64") and toa_diff_1 <    (req_pri58 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"3A";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw59 - x"64") and pw_cntr_latch1 < (req_pw59 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri59 - x"64") and toa_diff_1 <    (req_pri59 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"3B";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw60 - x"64") and pw_cntr_latch1 < (req_pw60 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri60 - x"64") and toa_diff_1 <    (req_pri60 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"3C";
+	 					end if;
+						end if;
+						if(pw_cntr_latch1 > (req_pw61 - x"64") and pw_cntr_latch1 < (req_pw61 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri61 - x"64") and toa_diff_1 <    (req_pri61 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"3D";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw62 - x"64") and pw_cntr_latch1 < (req_pw62 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri62 - x"64") and toa_diff_1 <    (req_pri62 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"3E";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw63 - x"64") and pw_cntr_latch1 < (req_pw63 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri63 - x"64") and toa_diff_1 <    (req_pri63 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"3F";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw64 - x"64") and pw_cntr_latch1 < (req_pw64 + x"64"))then
+	 					if(toa_diff_1 >    (req_pri64 - x"64") and toa_diff_1 <    (req_pri64 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"40";
+	 					end if;
+						end if;						
+					end if;
+						 												
+	 					
+	 					
+	 				
+     when st3 =>
+     				
+	  			   cnt_a 			<= (others => '0') ; 			
+				   
+				   if(cnt_b = (req_pri_mux - '1'))then
+				   		cnt_b 	<= x"00000000";
+				   else				    
+				   		cnt_b 	<= cnt_b + '1';
+				   end if;				   		 
+				   
+   					
+					if( cnt_b = req_pri_mux - req_pw_mux - x"64") then
+						preamble_pulse   <= '1' ;
+					elsif(cnt_d = req_pw_mux + x"C8")then
+						preamble_pulse   <= '0' ;
+						cnt_d			 <= x"00000000";
+						jamm_pass_cntr	 <= jamm_pass_cntr + '1';
+						if(init_cntr = (stagger_level - '1'))then	
+							init_cntr        <= x"00";
+						else													
+							init_cntr		 <= init_cntr + '1';
+						end if;							
+					elsif(preamble_pulse = '1' ) then
+						cnt_d 			 <= cnt_d + '1';
+					end if;	   
+					
+   					
+					if(jamm_pass_cntr = (no_of_pulse_to_Jamm - '1') ) then
+						nextstate <= st1 ;
+					end if ;	
+					
+					if(init_cntr = 0)then
+						req_pri_mux <= req_pri01;
+						req_pw_mux  <= req_pw01;
+					elsif(init_cntr = 1)then
+						req_pri_mux <= req_pri02;
+						req_pw_mux  <= req_pw02;
+					elsif(init_cntr = 2)then
+						req_pri_mux <= req_pri03;
+						req_pw_mux  <= req_pw03;
+					elsif(init_cntr = 3)then
+						req_pri_mux <= req_pri04;
+						req_pw_mux  <= req_pw04;
+					elsif(init_cntr = 4)then
+						req_pri_mux <= req_pri05;
+						req_pw_mux  <= req_pw05;
+					elsif(init_cntr = 5)then
+						req_pri_mux <= req_pri06;
+						req_pw_mux  <= req_pw06;
+					elsif(init_cntr = 6)then
+						req_pri_mux <= req_pri07;
+						req_pw_mux  <= req_pw07;
+					elsif(init_cntr = 7)then
+						req_pri_mux <= req_pri08;
+						req_pw_mux  <= req_pw08;
+					elsif(init_cntr = 8)then
+						req_pri_mux <= req_pri09;
+						req_pw_mux  <= req_pw09;
+					elsif(init_cntr = 9)then
+						req_pri_mux <= req_pri10;
+						req_pw_mux  <= req_pw10;
+					elsif(init_cntr = 10)then
+						req_pri_mux <= req_pri11;
+						req_pw_mux  <= req_pw11;
+					elsif(init_cntr = 11)then
+						req_pri_mux <= req_pri12;
+						req_pw_mux  <= req_pw12;
+					elsif(init_cntr = 12)then
+						req_pri_mux <= req_pri13;
+						req_pw_mux  <= req_pw13;
+					elsif(init_cntr = 13)then
+						req_pri_mux <= req_pri14;
+						req_pw_mux  <= req_pw14;
+					elsif(init_cntr = 14)then
+						req_pri_mux <= req_pri15;
+						req_pw_mux  <= req_pw15;
+					elsif(init_cntr = 15)then
+						req_pri_mux <= req_pri16;
+						req_pw_mux  <= req_pw16;
+					elsif(init_cntr = 16)then
+						req_pri_mux <= req_pri17;
+						req_pw_mux  <= req_pw17;
+					elsif(init_cntr = 17)then
+						req_pri_mux <= req_pri18;
+						req_pw_mux  <= req_pw18;
+					elsif(init_cntr = 18)then
+						req_pri_mux <= req_pri19;
+						req_pw_mux  <= req_pw19;
+					elsif(init_cntr = 19)then
+						req_pri_mux <= req_pri20;
+						req_pw_mux  <= req_pw20;
+					elsif(init_cntr = 20)then
+						req_pri_mux <= req_pri21;
+						req_pw_mux  <= req_pw21;
+					elsif(init_cntr = 21)then
+						req_pri_mux <= req_pri22;
+						req_pw_mux  <= req_pw22;
+					elsif(init_cntr = 22)then
+						req_pri_mux <= req_pri23;
+						req_pw_mux  <= req_pw23;
+					elsif(init_cntr = 23)then
+						req_pri_mux <= req_pri24;
+						req_pw_mux  <= req_pw24;
+					elsif(init_cntr = 24)then
+						req_pri_mux <= req_pri25;
+						req_pw_mux  <= req_pw25;
+					elsif(init_cntr = 25)then
+						req_pri_mux <= req_pri26;
+						req_pw_mux  <= req_pw26;
+					elsif(init_cntr = 26)then
+						req_pri_mux <= req_pri27;
+						req_pw_mux  <= req_pw27;
+					elsif(init_cntr = 27)then
+						req_pri_mux <= req_pri28;
+						req_pw_mux  <= req_pw28;
+					elsif(init_cntr = 28)then
+						req_pri_mux <= req_pri29;
+						req_pw_mux  <= req_pw29;
+					elsif(init_cntr = 29)then
+						req_pri_mux <= req_pri30;
+						req_pw_mux  <= req_pw30;
+					elsif(init_cntr = 30)then
+						req_pri_mux <= req_pri31;
+						req_pw_mux  <= req_pw31;
+					elsif(init_cntr = 31)then
+						req_pri_mux <= req_pri32;
+						req_pw_mux  <= req_pw32;
+					elsif(init_cntr = 32)then
+						req_pri_mux <= req_pri33;
+						req_pw_mux  <= req_pw33;
+					elsif(init_cntr = 33)then
+						req_pri_mux <= req_pri34;
+						req_pw_mux  <= req_pw34;
+					elsif(init_cntr = 34)then
+						req_pri_mux <= req_pri35;
+						req_pw_mux  <= req_pw35;
+					elsif(init_cntr = 35)then
+						req_pri_mux <= req_pri36;
+						req_pw_mux  <= req_pw36;
+					elsif(init_cntr = 36)then
+						req_pri_mux <= req_pri37;
+						req_pw_mux  <= req_pw37;
+					elsif(init_cntr = 37)then
+						req_pri_mux <= req_pri38;
+						req_pw_mux  <= req_pw38;
+					elsif(init_cntr = 38)then
+						req_pri_mux <= req_pri39;
+						req_pw_mux  <= req_pw39;
+					elsif(init_cntr = 39)then
+						req_pri_mux <= req_pri40;
+						req_pw_mux  <= req_pw40;
+					elsif(init_cntr = 40)then
+						req_pri_mux <= req_pri41;
+						req_pw_mux  <= req_pw41;
+					elsif(init_cntr = 41)then
+						req_pri_mux <= req_pri42;
+						req_pw_mux  <= req_pw42;
+					elsif(init_cntr = 42)then
+						req_pri_mux <= req_pri43;
+						req_pw_mux  <= req_pw43;
+					elsif(init_cntr = 43)then
+						req_pri_mux <= req_pri44;
+						req_pw_mux  <= req_pw44;
+					elsif(init_cntr = 44)then
+						req_pri_mux <= req_pri45;
+						req_pw_mux  <= req_pw45;
+					elsif(init_cntr = 45)then
+						req_pri_mux <= req_pri46;
+						req_pw_mux  <= req_pw46;
+					elsif(init_cntr = 46)then
+						req_pri_mux <= req_pri47;
+						req_pw_mux  <= req_pw47;
+					elsif(init_cntr = 47)then
+						req_pri_mux <= req_pri48;
+						req_pw_mux  <= req_pw48;
+					elsif(init_cntr = 48)then
+						req_pri_mux <= req_pri49;
+						req_pw_mux  <= req_pw49;
+					elsif(init_cntr = 49)then
+						req_pri_mux <= req_pri50;
+						req_pw_mux  <= req_pw50;
+					elsif(init_cntr = 50)then
+						req_pri_mux <= req_pri51;
+						req_pw_mux  <= req_pw51;
+					elsif(init_cntr = 51)then
+						req_pri_mux <= req_pri52;
+						req_pw_mux  <= req_pw52;
+					elsif(init_cntr = 52)then
+						req_pri_mux <= req_pri53;
+						req_pw_mux  <= req_pw53;
+					elsif(init_cntr = 53)then
+						req_pri_mux <= req_pri54;
+						req_pw_mux  <= req_pw54;
+					elsif(init_cntr = 54)then
+						req_pri_mux <= req_pri55;
+						req_pw_mux  <= req_pw55;
+					elsif(init_cntr = 55)then
+						req_pri_mux <= req_pri56;
+						req_pw_mux  <= req_pw56;
+					elsif(init_cntr = 56)then
+						req_pri_mux <= req_pri57;
+						req_pw_mux  <= req_pw57;
+					elsif(init_cntr = 57)then
+						req_pri_mux <= req_pri58;
+						req_pw_mux  <= req_pw58;
+					elsif(init_cntr = 58)then
+						req_pri_mux <= req_pri59;
+						req_pw_mux  <= req_pw59;
+					elsif(init_cntr = 59)then
+						req_pri_mux <= req_pri60;
+						req_pw_mux  <= req_pw60;
+					elsif(init_cntr = 60)then
+						req_pri_mux <= req_pri61;
+						req_pw_mux  <= req_pw61;
+					elsif(init_cntr = 61)then
+						req_pri_mux <= req_pri62;
+						req_pw_mux  <= req_pw62;
+					elsif(init_cntr = 62)then
+						req_pri_mux <= req_pri63;
+						req_pw_mux  <= req_pw63;
+					elsif(init_cntr = 63)then
+						req_pri_mux <= req_pri64;
+						req_pw_mux  <= req_pw64;
+					end if;			
+	 				
+	 				
+	 				
+	end case ;
+  end if;
+end process;
+
+
+
+
+
+end;	
+
+
+
+
+
+
+
+

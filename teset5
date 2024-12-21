@@ -1,0 +1,419 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
+
+library UNISIM;
+use UNISIM.VComponents.all;
+
+entity priority_encoder is
+Port(   rst             : in std_logic;
+        clk             : in std_logic;
+        encoder_no      : in std_logic_vector(1 downto 0);
+        trig_1          : in std_logic;
+        priorty_1       : in std_logic_vector(9 downto 0);      -- channle_no(9:8) priority(7:0)
+        trig_2          : in std_logic;
+        priorty_2       : in std_logic_vector(9 downto 0);
+        trig_3          : in std_logic;
+        priorty_3       : in std_logic_vector(9 downto 0);
+        trig_4          : in std_logic;
+        priorty_4       : in std_logic_vector(9 downto 0);
+        channel_no1     : out std_logic_vector(3 downto 0);     -- channle_no(1:0) encoderno(3:2)
+        trig_pri1       : out std_logic;
+        channel_no2     : out std_logic_vector(3 downto 0);    
+        trig_pri2       : out std_logic
+    );
+end priority_encoder;
+
+architecture Behavioral of priority_encoder is
+
+signal prity1               : std_logic_vector(9 downto 0) := (others =>'0');
+signal prity2               : std_logic_vector(9 downto 0) := (others =>'0');
+signal prity3               : std_logic_vector(9 downto 0) := (others =>'0');
+signal prity4               : std_logic_vector(9 downto 0) := (others =>'0');
+signal prity1x              : std_logic_vector(9 downto 0) := (others =>'0');
+signal prity2x              : std_logic_vector(9 downto 0) := (others =>'0');
+signal prity3x              : std_logic_vector(9 downto 0) := (others =>'0');
+signal prity4x              : std_logic_vector(9 downto 0) := (others =>'0');
+signal prity1z              : std_logic_vector(11 downto 0) := (others =>'0');
+signal prity2z              : std_logic_vector(11 downto 0) := (others =>'0');
+signal prity3z              : std_logic_vector(11 downto 0) := (others =>'0');
+signal prity4z              : std_logic_vector(11 downto 0) := (others =>'0');
+signal prity1y              : std_logic_vector(11 downto 0) := (others =>'0');
+signal prity2y              : std_logic_vector(11 downto 0) := (others =>'0');
+signal prity3y              : std_logic_vector(11 downto 0) := (others =>'0');
+signal trig1                : std_logic := '0';
+signal trig2                : std_logic := '0';
+signal trig3                : std_logic := '0';
+signal trig4                : std_logic := '0';
+signal trig_buf             : std_logic := '0';
+signal trig_buf1            : std_logic := '0';
+signal trig_busy            : std_logic := '0';
+signal trig_busy1           : std_logic := '0';
+signal channel_no_buf       : std_logic_vector(1 downto 0) := (others =>'0');
+signal channel_no_buf1      : std_logic_vector(3 downto 0) := (others =>'0');
+signal fdce_clr             : std_logic := '0';
+signal fdce_clr1            : std_logic := '0';
+signal trig1x               : std_logic := '0';
+signal trig2x               : std_logic := '0';
+signal trig3x               : std_logic := '0';
+signal stage1ch_no          : std_logic_vector(1 downto 0) := (others =>'0');
+signal trig_cn2_mask1       : std_logic;
+signal trig_cn2_mask2       : std_logic;
+signal trig_cn2_mask3       : std_logic;
+signal trig_cn2_mask4       : std_logic;
+
+attribute mark_debug : string;
+attribute mark_debug of channel_no1 : signal is "true";
+attribute mark_debug of  trig_pri1: signal is "true";
+attribute mark_debug of channel_no2 : signal is "true";
+attribute mark_debug of  trig_pri2: signal is "true";
+attribute mark_debug of  stage1ch_no: signal is "true";
+attribute mark_debug of  trig1x    : signal is "true";
+attribute mark_debug of  trig2x    : signal is "true";
+attribute mark_debug of  trig3x    : signal is "true";
+attribute mark_debug of  prity1y   : signal is "true";
+attribute mark_debug of  prity2y   : signal is "true";
+attribute mark_debug of  prity3y   : signal is "true";
+attribute mark_debug of  trig_1   : signal is "true";
+attribute mark_debug of  priorty_1   : signal is "true";
+
+begin
+
+process(clk)    -- merger sort
+begin
+if(rising_edge(clk)) then
+if(trig_busy = '0' and trig_busy1 = '0') then
+    if(priorty_1(7 downto 0) <= priorty_2(7 downto 0)) then
+        prity1    <= priorty_1;
+        prity2    <= priorty_2;
+    else    
+        prity1    <= priorty_2;
+        prity2    <= priorty_1;
+    end if;
+    
+    if(priorty_3(7 downto 0) <= priorty_4(7 downto 0)) then
+        prity3    <= priorty_3;
+        prity4    <= priorty_4;
+    else    
+        prity3    <= priorty_4;
+        prity4    <= priorty_3;
+    end if;
+    
+    if(prity1(7 downto 0) <= prity3(7 downto 0)) then
+        prity1x    <= prity1;
+    else
+        prity1x    <= prity3;
+    end if;        
+    
+    if(prity1(7 downto 0) > prity3(7 downto 0) and prity1(7 downto 0) <= prity4(7 downto 0)) then
+        prity2x    <= prity1;
+    elsif(prity1(7 downto 0) > prity3(7 downto 0) and prity1(7 downto 0) > prity4(7 downto 0)) then
+        prity2x    <= prity4;
+    elsif(prity2(7 downto 0) < prity3(7 downto 0)) then
+        prity2x    <= prity2;
+    else
+        prity2x    <= prity3;
+    end if;  
+    
+    if(prity1(7 downto 0) > prity4(7 downto 0)) then
+        prity3x    <= prity1;
+        prity4x    <= prity2;
+    elsif(prity2(7 downto 0) >= prity4(7 downto 0)) then
+        prity3x    <= prity4;
+        prity4x    <= prity2;            
+    elsif(prity2(7 downto 0) < prity4(7 downto 0) and prity2(7 downto 0) > prity3(7 downto 0)) then
+        prity3x    <= prity2;
+        prity4x    <= prity4;
+    else
+        prity3x    <= prity3;
+        prity4x    <= prity4;
+    end if;  
+
+else
+    prity1x     <= prity1x;
+    prity2x     <= prity2x;
+    prity3x     <= prity3x;
+    prity4x     <= prity4x;
+end if;
+end if;  
+end process;
+
+process(clk)        -- assign the org trigg to aftersort trigg
+begin
+if(rising_edge(clk)) then
+    if(prity1x(9 downto 8) = "00") then
+        trig1    <=  trig_1;
+    elsif(prity1x(9 downto 8) = "01") then
+        trig1    <=  trig_2;
+    elsif(prity1x(9 downto 8) = "10") then
+        trig1    <=  trig_3;
+    elsif(prity1x(9 downto 8) = "11") then
+        trig1    <=  trig_4;
+    else
+        trig1    <= '0';                     
+    end if;
+
+    if(prity2x(9 downto 8) = "00") then
+        trig2    <=  trig_1;
+    elsif(prity2x(9 downto 8) = "01") then
+        trig2    <=  trig_2;
+    elsif(prity2x(9 downto 8) = "10") then
+        trig2    <=  trig_3;
+    elsif(prity2x(9 downto 8) = "11") then
+        trig2    <=  trig_4;
+    else
+        trig2    <= '0';                     
+    end if;    
+
+    if(prity3x(9 downto 8) = "00") then
+        trig3    <=  trig_1;
+    elsif(prity3x(9 downto 8) = "01") then
+        trig3    <=  trig_2;
+    elsif(prity3x(9 downto 8) = "10") then
+        trig3    <=  trig_3;
+    elsif(prity3x(9 downto 8) = "11") then
+        trig3    <=  trig_4;
+    else
+        trig3    <= '0';                     
+    end if;
+
+    if(prity4x(9 downto 8) = "00") then
+        trig4    <=  trig_1;
+    elsif(prity4x(9 downto 8) = "01") then
+        trig4    <=  trig_2;
+    elsif(prity4x(9 downto 8) = "10") then
+        trig4    <=  trig_3;
+    elsif(prity4x(9 downto 8) = "11") then
+        trig4    <=  trig_4;
+    else
+        trig4    <= '0';                     
+    end if;                        
+end if;
+end process;
+
+-----------------------------------------
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst  = '1') then
+    trig_buf          <= '0';
+    channel_no_buf    <=  (others =>'0');
+    stage1ch_no       <= "00";
+elsif(trig_busy = '0') then    
+    if(trig1    = '1' and trig_cn2_mask1 = '0') then
+        trig_buf        <= '1';
+        channel_no_buf  <= prity1x(9 downto 8);
+        stage1ch_no     <= "00";
+    elsif(trig2    = '1' and trig_cn2_mask2 = '0') then
+        trig_buf        <= '1';
+        channel_no_buf  <= prity2x(9 downto 8);
+        stage1ch_no     <= "01";
+    elsif(trig3    = '1' and trig_cn2_mask3 = '0') then
+        trig_buf        <= '1';
+        channel_no_buf  <= prity3x(9 downto 8);
+        stage1ch_no     <= "10";
+    elsif(trig4    = '1' and trig_cn2_mask4 = '0') then
+        trig_buf        <= '1';               
+        channel_no_buf  <= prity4x(9 downto 8);
+        stage1ch_no     <= "11";
+    else
+        trig_buf        <= '0';
+        channel_no_buf  <=  (others =>'0');
+        stage1ch_no     <= "00";        
+    end if; 
+else
+    trig_buf        <= trig_buf;
+    channel_no_buf  <= channel_no_buf;        
+end if;
+end if;
+end process;
+
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst  = '0') then
+    if(channel_no_buf = "00") then
+        fdce_clr    <= not(trig_1);
+    elsif(channel_no_buf = "01") then
+        fdce_clr    <= not(trig_2);
+    elsif(channel_no_buf = "10") then
+        fdce_clr    <= not(trig_3);
+    elsif(channel_no_buf = "11") then
+        fdce_clr    <= not(trig_4);
+    else    
+        fdce_clr    <= '0';
+    end if;       
+else    
+    fdce_clr    <= '1';                                 
+end if;
+end if;
+end process;
+
+inst_fdce : fdce
+port map (  c   => clk,
+            d   => '1',
+            ce  => trig_buf,
+            clr => fdce_clr,
+            q   => trig_busy
+         );            
+        
+channel_no1  <= encoder_no & channel_no_buf;
+trig_pri1    <= trig_buf;
+   
+--------------------------------------------------------------------------------
+prity1z     <= "00" & prity1x; 
+prity2z     <= "01" & prity2x; 
+prity3z     <= "10" & prity3x; 
+prity4z     <= "11" & prity4x;
+ 
+process(clk)
+begin
+if(rising_edge(clk)) then
+--if(rst  = '1') then
+--    trig1x     <= '0';
+--    trig2x     <= '0';
+--    trig3x     <= '0';
+--    prity1y    <= (others =>'0');
+--    prity2y    <= (others =>'0');
+--    prity3y    <= (others =>'0');
+--else    
+if(trig_busy = '1') then
+    if(stage1ch_no = "00") then
+        trig1x      <= trig2;
+        trig2x      <= trig3;
+        trig3x      <= trig4;
+        prity1y     <= prity2z;
+        prity2y     <= prity3z;
+        prity3y     <= prity4z;
+    elsif(stage1ch_no = "01") then
+        trig1x      <= trig1;
+        trig2x      <= trig3;
+        trig3x      <= trig4;
+        prity1y     <= prity1z;
+        prity2y     <= prity3z;
+        prity3y     <= prity4z;
+    elsif(stage1ch_no = "10") then
+        trig1x      <= trig1;
+        trig2x      <= trig2;
+        trig3x      <= trig4;
+        prity1y     <= prity1z;
+        prity2y     <= prity2z;
+        prity3y     <= prity4z;
+    elsif(stage1ch_no = "11") then
+        trig1x      <= trig1;
+        trig2x      <= trig2;
+        trig3x      <= trig3;
+        prity1y     <= prity1z;
+        prity2y     <= prity2z;
+        prity3y     <= prity3z;
+    end if; 
+else
+    trig1x      <= '0';              --trig1x ;
+    trig2x      <= '0';              --trig2x ;
+    trig3x      <= '0';              --trig3x ;
+    prity1y     <= (others =>'0');   --prity1y;
+    prity2y     <= (others =>'0');   --prity2y;
+    prity3y     <= (others =>'0');   --prity3y;                                   
+end if;
+end if;
+--end if;
+end process;
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst  = '1') then
+    trig_buf1           <= '0';
+    channel_no_buf1     <=  (others =>'0');
+elsif(trig_busy1 = '0') then    
+    if(trig1x    = '1') then
+        trig_buf1        <= '1';
+        channel_no_buf1  <= prity1y(11 downto 8);
+    elsif(trig2x    = '1') then
+        trig_buf1        <= '1';
+        channel_no_buf1  <= prity2y(11 downto 8);
+    elsif(trig3x    = '1') then
+        trig_buf1        <= '1';
+        channel_no_buf1  <= prity3y(11 downto 8);
+    else
+        trig_buf1        <= '0';
+        channel_no_buf1  <=  (others =>'0');        
+    end if; 
+else
+    trig_buf1        <= trig_buf1;
+    channel_no_buf1  <= channel_no_buf1;        
+end if;
+end if;
+end process;
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(trig_busy1 = '1') then
+    if(channel_no_buf1(3 downto 2) = "00") then
+        trig_cn2_mask1      <= '1';
+        trig_cn2_mask2      <= '0';
+        trig_cn2_mask3      <= '0';
+        trig_cn2_mask4      <= '0';
+    elsif(channel_no_buf1(3 downto 2) = "01") then
+        trig_cn2_mask1      <= '0';
+        trig_cn2_mask2      <= '1';
+        trig_cn2_mask3      <= '0';
+        trig_cn2_mask4      <= '0';
+    elsif(channel_no_buf1(3 downto 2) = "10") then
+        trig_cn2_mask1      <= '0';
+        trig_cn2_mask2      <= '0';
+        trig_cn2_mask3      <= '1';
+        trig_cn2_mask4      <= '0';
+    elsif(channel_no_buf1(3 downto 2) = "11") then
+        trig_cn2_mask1      <= '0';
+        trig_cn2_mask2      <= '0';
+        trig_cn2_mask3      <= '0';
+        trig_cn2_mask4      <= '1';
+    end if;                                    
+else
+     trig_cn2_mask1      <= '0';
+     trig_cn2_mask2      <= '0';
+     trig_cn2_mask3      <= '0';
+     trig_cn2_mask4      <= '0';       
+end if;
+end if;
+end process;
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+    if(channel_no_buf1(1 downto 0) = "00") then
+        fdce_clr1    <= not(trig_1);
+    elsif(channel_no_buf1(1 downto 0) = "01") then
+        fdce_clr1    <= not(trig_2);
+    elsif(channel_no_buf1(1 downto 0) = "10") then
+        fdce_clr1    <= not(trig_3);
+    elsif(channel_no_buf1(1 downto 0) = "11") then
+        fdce_clr1    <= not(trig_4);
+    else    
+        fdce_clr1    <= '0';
+    end if;                                    
+end if;
+end process;
+    
+inst_fdce1 : fdce
+port map (  c   => clk,
+            d   => '1',
+            ce  => trig_buf1,
+            clr => fdce_clr1,
+            q   => trig_busy1
+         );            
+        
+channel_no2  <= encoder_no & channel_no_buf1(1 downto 0) ;
+trig_pri2    <= trig_buf1;
+
+end Behavioral;
+
+
+
+
+
+

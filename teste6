@@ -1,0 +1,951 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
+
+library UNISIM;
+use UNISIM.VComponents.all;
+
+entity priority_encoder2 is
+Port(   clk             : in std_logic;
+        rst             : in std_logic;
+        trig1           : in std_logic;
+        ch_no1          : in std_logic_vector(5 downto 0);     -- channle_no(1:0) encoderno(3:2) sub_cahnnel(5:4)
+        trig2           : in std_logic;
+        ch_no2          : in std_logic_vector(5 downto 0);
+        trig3           : in std_logic;
+        ch_no3          : in std_logic_vector(5 downto 0);
+        trig4           : in std_logic;
+        ch_no4          : in std_logic_vector(5 downto 0);
+        trig5           : in std_logic;
+        ch_no5          : in std_logic_vector(5 downto 0);
+        trig6           : in std_logic;
+        ch_no6          : in std_logic_vector(5 downto 0);
+        trig7           : in std_logic;
+        ch_no7          : in std_logic_vector(5 downto 0);
+        trig8           : in std_logic;
+        ch_no8          : in std_logic_vector(5 downto 0);
+        lo_trig1        : out std_logic;
+        lo_ch_no1       : out std_logic_vector(5 downto 0);
+        lo_trig2        : out std_logic;
+        lo_ch_no2       : out std_logic_vector(5 downto 0);
+        lo_trig3        : out std_logic;
+        lo_ch_no3       : out std_logic_vector(5 downto 0);
+        lo_trig4        : out std_logic;
+        lo_ch_no4       : out std_logic_vector(5 downto 0);
+        trig_en_o       : out std_logic;
+        module_sel_sw   : out std_logic_vector(3 downto 0)
+    );
+end priority_encoder2;
+
+architecture Behavioral of priority_encoder2 is
+
+component pul_gen
+port( 
+  clk  : in  std_logic;
+  din  : in  std_logic;
+  dout : out std_logic
+);
+end component;
+
+type state  is (idle,lo_sel1,lo_sel2,lo_sel3,lo_sel4);
+signal n_s  : state;
+
+signal lo_busy1         : std_logic := '0';
+signal lo_busy2         : std_logic := '0';
+signal lo_busy3         : std_logic := '0';
+signal lo_busy4         : std_logic := '0';
+signal lo_trig_buf1     : std_logic := '0';
+signal lo_trig_buf2     : std_logic := '0';
+signal lo_trig_buf3     : std_logic := '0';
+signal lo_trig_buf4     : std_logic := '0';
+signal lo_mask1         : std_logic := '0';
+signal lo_mask2         : std_logic := '0';
+signal lo_mask3         : std_logic := '0';
+signal lo_mask4         : std_logic := '0';
+signal lo_mask5         : std_logic := '0';
+signal lo_mask6         : std_logic := '0';
+signal lo_mask7         : std_logic := '0';
+signal lo_mask8         : std_logic := '0';
+signal lo_fdce_clr1     : std_logic := '0';
+signal lo_fdce_clr2     : std_logic := '0';
+signal lo_fdce_clr3     : std_logic := '0';
+signal lo_fdce_clr4     : std_logic := '0';
+signal lo_ch_buf1       : std_logic_vector(5 downto 0) := (others =>'0');
+signal lo_ch_buf2       : std_logic_vector(5 downto 0) := (others =>'0');
+signal lo_ch_buf3       : std_logic_vector(5 downto 0) := (others =>'0');
+signal lo_ch_buf4       : std_logic_vector(5 downto 0) := (others =>'0');
+
+signal trig_en          : std_logic := '0';
+signal trig_dely_en     : std_logic := '0';
+signal trig_nodely_en   : std_logic := '0';
+signal trig_en1         : std_logic := '0';
+signal trig_en2         : std_logic := '0';
+signal trig_en3         : std_logic := '0';
+signal trig_en4         : std_logic := '0';
+signal trig_en5         : std_logic := '0';
+signal trig_en6         : std_logic := '0';
+signal trig_en7         : std_logic := '0';
+signal trig_en8         : std_logic := '0';
+signal trig_en9         : std_logic := '0';
+signal trig_en10        : std_logic := '0';
+signal trig_en11        : std_logic := '0';
+signal trig_en12        : std_logic := '0';
+signal trig_en13        : std_logic := '0';
+signal trig_en14        : std_logic := '0';
+signal trig_en15        : std_logic := '0';
+signal trig_en16        : std_logic := '0';
+signal trig_en17        : std_logic := '0';
+signal trig_en18        : std_logic := '0';
+signal trig_en19        : std_logic := '0';
+signal trig_en20        : std_logic := '0';
+signal trig_en21        : std_logic := '0';
+signal trig1_pul        : std_logic := '0';
+signal trig2_pul        : std_logic := '0';
+signal trig3_pul        : std_logic := '0';
+signal trig4_pul        : std_logic := '0';
+signal trig5_pul        : std_logic := '0';
+signal trig6_pul        : std_logic := '0';
+signal trig7_pul        : std_logic := '0';
+signal trig8_pul        : std_logic := '0';
+signal trig1_pulx       : std_logic := '0';
+signal trig2_pulx       : std_logic := '0';
+signal trig3_pulx       : std_logic := '0';
+signal trig4_pulx       : std_logic := '0';
+signal trig5_pulx       : std_logic := '0';
+signal trig6_pulx       : std_logic := '0';
+signal trig7_pulx       : std_logic := '0';
+signal trig8_pulx       : std_logic := '0';
+signal lo_rdy1          : std_logic := '0';
+signal lo_rdy2          : std_logic := '0';
+signal lo_rdy3          : std_logic := '0';
+signal lo_rdy4          : std_logic := '0';
+signal module_lock      : std_logic := '0';
+
+signal module_cnt       : std_logic_vector(4 downto 0) := (others =>'0');
+constant moduled_settle_cnt    : std_logic_vector(4 downto 0) := "01001";       --- 9 * 16.66ns is the DDC settiling time(143ns) during the band change.
+
+attribute mark_debug : string;
+attribute mark_debug of  trig1 : signal is "true";
+attribute mark_debug of ch_no1 : signal is "true";
+attribute mark_debug of  trig2 : signal is "true";
+attribute mark_debug of ch_no2 : signal is "true";
+attribute mark_debug of  trig3 : signal is "true";
+attribute mark_debug of ch_no3 : signal is "true";
+attribute mark_debug of  trig4 : signal is "true";
+attribute mark_debug of ch_no4 : signal is "true";
+attribute mark_debug of  trig5 : signal is "true";
+attribute mark_debug of ch_no5 : signal is "true";
+attribute mark_debug of  trig6 : signal is "true";
+attribute mark_debug of ch_no6 : signal is "true";
+attribute mark_debug of  trig7 : signal is "true";
+attribute mark_debug of ch_no7 : signal is "true";
+attribute mark_debug of  trig8 : signal is "true";
+attribute mark_debug of ch_no8 : signal is "true";
+attribute mark_debug of lo_trig1      : signal is "true";
+attribute mark_debug of lo_ch_no1     : signal is "true";
+attribute mark_debug of lo_trig2      : signal is "true";
+attribute mark_debug of lo_ch_no2     : signal is "true";
+attribute mark_debug of lo_trig3      : signal is "true";
+attribute mark_debug of lo_ch_no3     : signal is "true";
+attribute mark_debug of lo_trig4      : signal is "true";
+attribute mark_debug of lo_ch_no4     : signal is "true";
+attribute mark_debug of module_sel_sw : signal is "true";
+attribute mark_debug of lo_busy1 : signal is "true";
+attribute mark_debug of  lo_rdy1 : signal is "true";
+attribute mark_debug of lo_busy2 : signal is "true";
+attribute mark_debug of  lo_rdy2 : signal is "true";
+attribute mark_debug of lo_busy3 : signal is "true";
+attribute mark_debug of  lo_rdy3 : signal is "true";
+attribute mark_debug of lo_busy4 : signal is "true";
+attribute mark_debug of  lo_rdy4 : signal is "true";
+attribute mark_debug of  trig_en : signal is "true";
+attribute mark_debug of  lo_fdce_clr1 : signal is "true";
+attribute mark_debug of  lo_fdce_clr2 : signal is "true";
+attribute mark_debug of  lo_fdce_clr3 : signal is "true";
+attribute mark_debug of  lo_fdce_clr4 : signal is "true";
+attribute mark_debug of  lo_trig_buf1  : signal is "true";
+attribute mark_debug of  lo_ch_buf1    : signal is "true";
+attribute mark_debug of  lo_trig_buf2  : signal is "true";
+attribute mark_debug of  lo_ch_buf2    : signal is "true";
+attribute mark_debug of  lo_trig_buf3  : signal is "true";
+attribute mark_debug of  lo_ch_buf3    : signal is "true";
+attribute mark_debug of  lo_trig_buf4  : signal is "true";
+attribute mark_debug of  lo_ch_buf4    : signal is "true";
+attribute mark_debug of  lo_mask1      : signal is "true";
+attribute mark_debug of  lo_mask2      : signal is "true";
+attribute mark_debug of  lo_mask3      : signal is "true";
+attribute mark_debug of  lo_mask4      : signal is "true";
+attribute mark_debug of  lo_mask5      : signal is "true";
+attribute mark_debug of  lo_mask6      : signal is "true";
+attribute mark_debug of  lo_mask7      : signal is "true";
+attribute mark_debug of  lo_mask8      : signal is "true";
+
+begin
+
+pgen1: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => trig1,
+  dout => trig1_pul
+);
+
+pgen2: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => trig2,
+  dout => trig2_pul
+);
+
+pgen3: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => trig3,
+  dout => trig3_pul
+);
+
+pgen4: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => trig4,
+  dout => trig4_pul
+);
+
+pgen5: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => trig5,
+  dout => trig5_pul
+);
+
+pgen6: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => trig6,
+  dout => trig6_pul
+);
+
+pgen7: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => trig7,
+  dout => trig7_pul
+);
+
+pgen8: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => trig8,
+  dout => trig8_pul
+);
+
+
+pgen1x: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => not(trig1),
+  dout => trig1_pulx
+);
+
+pgen2x: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => not(trig2),
+  dout => trig2_pulx
+);
+
+pgen3x: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => not(trig3),
+  dout => trig3_pulx
+);
+
+pgen4x: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => not(trig4),
+  dout => trig4_pulx
+);
+
+pgen5x: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => not(trig5),
+  dout => trig5_pulx
+);
+
+pgen6x: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => not(trig6),
+  dout => trig6_pulx
+);
+
+pgen7x: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => not(trig7),
+  dout => trig7_pulx
+);
+
+pgen8x: pul_gen 
+  port map(
+  clk  => clk, 
+  din  => not(trig8),
+  dout => trig8_pulx
+);
+
+
+trig_nodely_en <=   trig1_pul or trig2_pul or trig3_pul or trig4_pul or
+                    trig5_pul or trig6_pul or trig7_pul or trig8_pul;
+
+trig_en     <= (trig_nodely_en and (not(module_lock))) or trig_en21;
+ trig_en_o <= trig_en;
+process(clk)
+begin
+if(rising_edge(clk)) then            
+        trig_en1 <= (trig_nodely_en and module_lock);
+        trig_en2 <= trig_en1;
+        trig_en3 <= trig_en2;
+        trig_en4 <= trig_en3;
+        trig_en5 <= trig_en4;
+        trig_en6 <= trig_en5;
+        trig_en7  <= trig_en6;
+        trig_en8  <= trig_en7;
+        trig_en9  <= trig_en8;
+        trig_en10 <= trig_en9;
+        trig_en11 <= trig_en10;
+        trig_en12 <= trig_en11;
+        trig_en13 <= trig_en12;
+        trig_en14 <= trig_en13;
+        trig_en15 <= trig_en14;
+        trig_en16 <= trig_en15;
+        trig_en17 <= trig_en16;
+        trig_en18 <= trig_en17;
+        trig_en19 <= trig_en18;
+        trig_en20 <= trig_en19;
+        trig_en21 <= trig_en20;
+end if;
+end process; 
+           
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst  = '1') then
+    n_s             <= idle;
+    module_cnt      <= (others =>'0');
+    module_sel_sw   <= (others =>'0');
+    lo_rdy1         <= '0';
+    lo_rdy2         <= '0';
+    lo_rdy3         <= '0';
+    lo_rdy4         <= '0';
+    module_lock     <= '0';
+else
+    case n_s is
+        when idle    => if(trig_en = '1') then
+                        n_s     <= lo_sel2;
+                    else
+                        n_s     <= idle;
+                    end if;
+                    module_cnt      <= (others =>'0');
+                    module_sel_sw   <= (others =>'0');
+                    lo_rdy1         <= '0';
+                    lo_rdy2         <= '0';
+                    lo_rdy3         <= '0';
+                    lo_rdy4         <= '0';
+                    module_lock     <= '0';
+        when lo_sel1 => 
+                    if(module_cnt   < moduled_settle_cnt) then
+                        n_s         <= lo_sel1;
+                        module_cnt  <= module_cnt + '1';
+                        module_lock <= '1';
+                    else
+                        module_lock <= '0';
+                        if(trig_en = '1' and lo_busy1 = '0') then
+                            n_s         <= lo_sel1;
+                        elsif(trig_en = '1' and lo_busy2 = '0') then
+                            n_s         <= lo_sel2;
+                            module_cnt  <= (others =>'0');
+                        elsif(trig_en = '1' and lo_busy3 = '0') then
+                            n_s         <= lo_sel3;
+                            module_cnt  <= (others =>'0');
+                        elsif(trig_en = '1' and lo_busy4 = '0') then
+                            n_s         <= lo_sel4;
+                            module_cnt  <= (others =>'0');                                
+                        end if;                        
+                    end if;                        
+                    if(lo_fdce_clr1 = '1') then
+                        lo_rdy1         <=  '0';
+                    else
+                        lo_rdy1         <= '1';
+                    end if;
+                    module_sel_sw   <= x"3";
+                    if(lo_busy2 = '0') then
+                        lo_rdy2 <=  '0';
+                    else
+                        lo_rdy2 <= lo_rdy2;
+                    end if;
+                    
+                    if(lo_busy3 = '0') then
+                        lo_rdy3 <=  '0';
+                    else
+                        lo_rdy3 <= lo_rdy3;
+                    end if;
+                    
+                    if(lo_busy4 = '0') then
+                        lo_rdy4 <=  '0';
+                    else
+                        lo_rdy4 <= lo_rdy4;
+                    end if;                                                     
+                    
+                    
+        when lo_sel2 =>
+                    if(module_cnt   < moduled_settle_cnt) then
+                        n_s         <= lo_sel2;
+                        module_cnt  <= module_cnt + '1';
+                        module_lock <= '1';
+                    else
+                        module_lock <= '0';
+                        if(trig_en = '1' and lo_busy2 = '0') then
+                            n_s         <= lo_sel2;
+                        elsif(trig_en = '1' and lo_busy3 = '0') then
+                            n_s         <= lo_sel3;
+                            module_cnt  <= (others =>'0');
+                        elsif(trig_en = '1' and lo_busy4 = '0') then
+                            n_s         <= lo_sel4;     
+                            module_cnt  <= (others =>'0');
+                        elsif(trig_en = '1' and lo_busy1 = '0') then
+                            n_s         <= lo_sel1;  
+                            module_cnt  <= (others =>'0');                                                        
+                        end if;                        
+                    end if;                        
+                    if(lo_fdce_clr2 = '1') then
+                        lo_rdy2         <=  '0';
+                    else
+                        lo_rdy2         <= '1';
+                    end if;
+                    module_sel_sw   <= x"0";
+                     
+                    if(lo_busy1 = '0') then
+                        lo_rdy1 <=  '0';
+                    else
+                        lo_rdy1 <= lo_rdy1;
+                    end if;
+                    
+                    if(lo_busy3 = '0') then
+                        lo_rdy3 <=  '0';
+                    else
+                        lo_rdy3 <= lo_rdy3;
+                    end if;
+                    
+                    if(lo_busy4 = '0') then
+                        lo_rdy4 <=  '0';
+                    else
+                        lo_rdy4 <= lo_rdy4;
+                    end if;    
+       when lo_sel3 =>
+                    if(module_cnt   < moduled_settle_cnt) then
+                        n_s         <= lo_sel3;
+                        module_cnt  <= module_cnt + '1';
+                        module_lock <= '1';
+                    else
+                        module_lock <= '0';
+                        if(trig_en = '1' and lo_busy3 = '0') then
+                            n_s         <= lo_sel3;
+                        elsif(trig_en = '1' and lo_busy2 = '0') then
+                            n_s         <= lo_sel2;
+                            module_cnt  <= (others =>'0');                            
+                        elsif(trig_en = '1' and lo_busy4 = '0') then
+                            n_s         <= lo_sel4;   
+                            module_cnt  <= (others =>'0');
+                        elsif(trig_en = '1' and lo_busy1 = '0') then
+                            n_s         <= lo_sel1;
+                            module_cnt  <= (others =>'0');                            
+                        end if;                        
+                    end if;                        
+                    if(lo_fdce_clr3 = '1') then
+                        lo_rdy3         <=  '0';
+                    else
+                        lo_rdy3         <= '1';
+                    end if;
+                    module_sel_sw       <= x"1"; 
+                    
+                     
+                    if(lo_busy2 = '0') then
+                        lo_rdy2 <=  '0';
+                    else
+                        lo_rdy2 <= lo_rdy2;
+                    end if;
+                    
+                    if(lo_busy1 = '0') then
+                        lo_rdy1 <=  '0';
+                    else
+                        lo_rdy1 <= lo_rdy1;
+                    end if;
+                    
+                    if(lo_busy4 = '0') then
+                        lo_rdy4 <=  '0';
+                    else
+                        lo_rdy4 <= lo_rdy4;
+                    end if;     
+        when lo_sel4 =>
+                    if(module_cnt   < moduled_settle_cnt) then
+                        n_s         <= lo_sel4;
+                        module_cnt  <= module_cnt + '1';
+                        module_lock <= '1';
+                    else
+                        module_lock <= '0';
+                        if(trig_en = '1' and lo_busy4 = '0') then
+                            n_s         <= lo_sel4;
+                        elsif(trig_en = '1' and lo_busy2 = '0') then
+                            n_s         <= lo_sel2;
+                            module_cnt  <= (others =>'0');
+                        elsif(trig_en = '1' and lo_busy3 = '0') then
+                            n_s         <= lo_sel3; 
+                            module_cnt  <= (others =>'0'); 
+                        elsif(trig_en = '1' and lo_busy1 = '0') then
+                            n_s         <= lo_sel1;
+                            module_cnt  <= (others =>'0');                                                          
+                        end if;                        
+                    end if; 
+                    if(lo_fdce_clr4 = '1') then
+                        lo_rdy4         <=  '0';
+                    else
+                        lo_rdy4         <= '1';
+                    end if;                       
+                    module_sel_sw       <= x"2";  
+                    
+                     
+                    if(lo_busy2 = '0') then
+                        lo_rdy2 <=  '0';
+                    else
+                        lo_rdy2 <= lo_rdy2;
+                    end if;
+                    
+                    if(lo_busy3 = '0') then
+                        lo_rdy3 <=  '0';
+                    else
+                        lo_rdy3 <= lo_rdy3;
+                    end if;
+                    
+                    if(lo_busy1 = '0') then
+                        lo_rdy1 <=  '0';
+                    else
+                        lo_rdy1 <= lo_rdy1;
+                    end if;                                      
+    end case;                                                                                                          
+end if;
+end if;
+end process;
+
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1' or lo_fdce_clr1 = '1') then
+    lo_trig_buf1    <= '0';
+    lo_ch_buf1      <= (others =>'0');
+else
+if(lo_rdy1 = '1') then -- and module_lock = '1') then
+if(lo_busy1 = '0') then
+    if(trig1 = '1' and lo_mask1 ='0') then
+        lo_trig_buf1    <= trig1;
+        lo_ch_buf1      <= ch_no1;
+    elsif(trig3 = '1' and lo_mask3 ='0') then
+        lo_trig_buf1    <= trig3;
+        lo_ch_buf1      <= ch_no3;  
+    elsif(trig5 = '1' and lo_mask5 ='0') then
+        lo_trig_buf1    <= trig5;
+        lo_ch_buf1      <= ch_no5; 
+    elsif(trig7 = '1' and lo_mask7 ='0') then
+        lo_trig_buf1    <= trig7;
+        lo_ch_buf1      <= ch_no7;                     
+    elsif(trig2 = '1' and lo_mask2 ='0') then
+        lo_trig_buf1    <= trig2;
+        lo_ch_buf1      <= ch_no2;
+    elsif(trig4 = '1' and lo_mask4 ='0') then
+        lo_trig_buf1    <= trig4;
+        lo_ch_buf1      <= ch_no4;
+    elsif(trig6 = '1' and lo_mask6 ='0') then
+        lo_trig_buf1    <= trig6;
+        lo_ch_buf1      <= ch_no6;
+    elsif(trig8 = '1' and lo_mask8 ='0') then
+        lo_trig_buf1    <= trig8;
+        lo_ch_buf1      <= ch_no8;
+    else
+        lo_trig_buf1    <= '0';
+        lo_ch_buf1      <= (others =>'0');
+    end if; 
+end if;  
+else
+    lo_trig_buf1    <= lo_trig_buf1;
+    lo_ch_buf1      <= lo_ch_buf1;  
+end if;
+end if;
+end if;
+end process;
+
+fdce_1  : fdce
+port map   (c   => clk,
+            D   => '1',
+            ce  => lo_trig_buf1,
+            clr => lo_fdce_clr1 or rst,
+            q   => lo_busy1
+            );
+
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1' or lo_fdce_clr2 = '1') then
+    lo_trig_buf2    <= '0';
+    lo_ch_buf2      <= (others =>'0');
+else
+if(lo_rdy2 = '1') then -- and module_lock = '0') then
+if(lo_busy2 = '0') then
+    if(trig3 = '1' and lo_mask3 ='0') then
+        lo_trig_buf2    <= trig3;
+        lo_ch_buf2      <= ch_no3;  
+    elsif(trig1 = '1' and lo_mask1 ='0') then
+        lo_trig_buf2    <= trig1;
+        lo_ch_buf2      <= ch_no1;
+    elsif(trig5 = '1' and lo_mask5 ='0') then
+        lo_trig_buf2    <= trig5;
+        lo_ch_buf2      <= ch_no5; 
+    elsif(trig7 = '1' and lo_mask7 ='0') then
+        lo_trig_buf2    <= trig7;
+        lo_ch_buf2      <= ch_no7;                     
+    elsif(trig2 = '1' and lo_mask2 ='0') then
+        lo_trig_buf2    <= trig2;
+        lo_ch_buf2      <= ch_no2;
+    elsif(trig4 = '1' and lo_mask4 ='0') then
+        lo_trig_buf2    <= trig4;
+        lo_ch_buf2      <= ch_no4;
+    elsif(trig6 = '1' and lo_mask6 ='0') then
+        lo_trig_buf2    <= trig6;
+        lo_ch_buf2      <= ch_no6;
+    elsif(trig8 = '1' and lo_mask8 ='0') then
+        lo_trig_buf2    <= trig8;
+        lo_ch_buf2      <= ch_no8;
+    else
+        lo_trig_buf2    <= '0';
+        lo_ch_buf2      <= (others =>'0');
+    end if;   
+end if;        
+else
+    lo_trig_buf2    <= lo_trig_buf2;
+    lo_ch_buf2      <= lo_ch_buf2;
+end if;
+end if;
+end if;
+end process;
+
+fdce_2  : fdce
+port map   (c   => clk,
+            D   => '1',
+            ce  => lo_trig_buf2,
+            clr => lo_fdce_clr2 or rst,
+            q   => lo_busy2
+            );
+
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1' or lo_fdce_clr3 = '1') then
+    lo_trig_buf3    <= '0';
+    lo_ch_buf3      <= (others =>'0');
+else
+if(lo_rdy3 = '1') then -- and module_lock = '0') then
+if(lo_busy3 = '0') then
+    if(trig5 = '1' and lo_mask5 ='0') then
+        lo_trig_buf3    <= trig5;
+        lo_ch_buf3      <= ch_no5;
+    elsif(trig1 = '1' and lo_mask1 ='0') then
+        lo_trig_buf3    <= trig1;
+        lo_ch_buf3      <= ch_no1;
+    elsif(trig3 = '1' and lo_mask3 ='0') then
+        lo_trig_buf3    <= trig3;
+        lo_ch_buf3      <= ch_no3;  
+    elsif(trig7 = '1' and lo_mask7 ='0') then
+        lo_trig_buf3    <= trig7;
+        lo_ch_buf3      <= ch_no7;                     
+    elsif(trig2 = '1' and lo_mask2 ='0') then
+        lo_trig_buf3    <= trig2;
+        lo_ch_buf3      <= ch_no2;
+    elsif(trig4 = '1' and lo_mask4 ='0') then
+        lo_trig_buf3    <= trig4;
+        lo_ch_buf3      <= ch_no4;
+    elsif(trig6 = '1' and lo_mask6 ='0') then
+        lo_trig_buf3    <= trig6;
+        lo_ch_buf3      <= ch_no6;
+    elsif(trig8 = '1' and lo_mask8 ='0') then
+        lo_trig_buf3    <= trig8;
+        lo_ch_buf3      <= ch_no8;
+    else
+        lo_trig_buf3    <= '0';
+        lo_ch_buf3      <= (others =>'0');
+    end if;
+end if;        
+else
+    lo_trig_buf3    <= lo_trig_buf3;
+    lo_ch_buf3      <= lo_ch_buf3;
+end if;
+end if;
+end if;
+end process;
+
+fdce_3  : fdce
+port map   (c   => clk,
+            D   => '1',
+            ce  => lo_trig_buf3,
+            clr => lo_fdce_clr3 or rst,
+            q   => lo_busy3
+            );
+
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1' or lo_fdce_clr4 = '1') then
+    lo_trig_buf4    <= '0';
+    lo_ch_buf4      <= (others =>'0');
+else
+if(lo_rdy4 = '1') then -- and module_lock = '0') then
+if(lo_busy4 = '0') then
+    if(trig7 = '1' and lo_mask7 ='0') then
+        lo_trig_buf4    <= trig7;
+        lo_ch_buf4      <= ch_no7;  
+    elsif(trig1 = '1' and lo_mask1 ='0') then
+        lo_trig_buf4    <= trig1;
+        lo_ch_buf4      <= ch_no1;
+    elsif(trig3 = '1' and lo_mask3 ='0') then
+        lo_trig_buf4    <= trig3;
+        lo_ch_buf4      <= ch_no3;  
+    elsif(trig5 = '1' and lo_mask5 ='0') then
+        lo_trig_buf4    <= trig5;
+        lo_ch_buf4      <= ch_no5; 
+    elsif(trig2 = '1' and lo_mask2 ='0') then
+        lo_trig_buf4    <= trig2;
+        lo_ch_buf4      <= ch_no2;
+    elsif(trig4 = '1' and lo_mask4 ='0') then
+        lo_trig_buf4    <= trig4;
+        lo_ch_buf4      <= ch_no4;
+    elsif(trig6 = '1' and lo_mask6 ='0') then
+        lo_trig_buf4    <= trig6;
+        lo_ch_buf4      <= ch_no6;
+    elsif(trig8 = '1' and lo_mask8 ='0') then
+        lo_trig_buf4    <= trig8;
+        lo_ch_buf4      <= ch_no8;
+    else
+        lo_trig_buf4    <= '0';
+        lo_ch_buf4      <= (others =>'0');
+    end if;  
+end if; 
+else
+    lo_trig_buf4    <= lo_trig_buf4;
+    lo_ch_buf4      <= lo_ch_buf4;                                                         
+end if;
+end if;
+end if;
+end process;
+
+fdce_4  : fdce
+port map   (c   => clk,
+            D   => '1',
+            ce  => lo_trig_buf4,
+            clr => lo_fdce_clr4 or rst,
+            q   => lo_busy4
+            );
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then	
+	lo_mask1        <= '0';
+    lo_mask2        <= '0';
+    lo_mask3        <= '0';
+    lo_mask4        <= '0';
+    lo_mask5        <= '0';
+    lo_mask6        <= '0';
+    lo_mask7        <= '0';
+    lo_mask8        <= '0';
+else
+	if(lo_busy1 = '1' or lo_busy2 = '1' or lo_busy3 = '1' or lo_busy4 = '1') then
+		if((lo_ch_buf1(5 downto 2) = x"0" and lo_busy1 = '1') or (lo_ch_buf2(5 downto 2) = x"0" and lo_busy2 = '1') or (lo_ch_buf3(5 downto 2) = x"0" and lo_busy3 = '1')or (lo_ch_buf4(5 downto 2) = x"0" and lo_busy4 = '1')) then		
+			lo_mask1        <= trig1;
+		else	
+			lo_mask1        <= '0';
+		end if;
+		
+		if((lo_ch_buf1(5 downto 2) = x"4" and lo_busy1 = '1') or (lo_ch_buf2(5 downto 2) = x"4" and lo_busy2 = '1') or (lo_ch_buf3(5 downto 2) = x"4" and lo_busy3 = '1') or (lo_ch_buf4(5 downto 2) = x"4" and lo_busy4 = '1')) then		
+			lo_mask2        <= trig2;
+		else	
+			lo_mask2       <= '0';
+		end if;
+		
+		if((lo_ch_buf1(5 downto 2) = x"1" and lo_busy1 = '1') or (lo_ch_buf2(5 downto 2) = x"1" and lo_busy2 = '1') or (lo_ch_buf3(5 downto 2) = x"1" and lo_busy3 = '1') or (lo_ch_buf4(5 downto 2) = x"1" and lo_busy4 = '1')) then		
+			lo_mask3        <= trig3;
+		else	
+			lo_mask3        <= '0';
+		end if;	
+		
+		if((lo_ch_buf1(5 downto 2) = x"5" and lo_busy1 = '1') or (lo_ch_buf2(5 downto 2) = x"5" and lo_busy2 = '1') or (lo_ch_buf3(5 downto 2) = x"5" and lo_busy3 = '1') or (lo_ch_buf4(5 downto 2) = x"5" and lo_busy4 = '1')) then		
+			lo_mask4        <= trig4;
+		else	
+			lo_mask4        <= '0';
+		end if;
+		
+		if((lo_ch_buf1(5 downto 2) = x"2" and lo_busy1 = '1') or (lo_ch_buf2(5 downto 2) = x"2" and lo_busy2 = '1') or (lo_ch_buf3(5 downto 2) = x"2" and lo_busy3 = '1') or (lo_ch_buf4(5 downto 2) = x"2" and lo_busy4 = '1')) then		
+			lo_mask5        <= trig5;
+		else	
+			lo_mask5       <= '0';
+		end if;
+		
+		if((lo_ch_buf1(5 downto 2) = x"6" and lo_busy1 = '1') or (lo_ch_buf2(5 downto 2) = x"6" and lo_busy2 = '1') or (lo_ch_buf3(5 downto 2) = x"6" and lo_busy3 = '1') or (lo_ch_buf4(5 downto 2) = x"6" and lo_busy4 = '1')) then		
+			lo_mask6        <= trig6;
+		else	
+			lo_mask6       <= '0';
+		end if;
+		
+		if((lo_ch_buf1(5 downto 2)   = x"3" and lo_busy1 = '1') or (lo_ch_buf2(5 downto 2) = x"3" and lo_busy2 = '1') or (lo_ch_buf3(5 downto 2) = x"3" and lo_busy3 = '1') or (lo_ch_buf4(5 downto 2)= x"3" and lo_busy4 = '1')) then		
+			lo_mask7        <= trig7;
+		else	
+			lo_mask7        <= '0';
+		end if;
+		
+		if((lo_ch_buf1(5 downto 2)   = x"7" and lo_busy1 = '1') or (lo_ch_buf2(5 downto 2) = x"7" and lo_busy2 = '1') or (lo_ch_buf3(5 downto 2) = x"7" and lo_busy3 = '1') or (lo_ch_buf4(5 downto 2)= x"7" and lo_busy4 = '1')) then		
+			lo_mask8        <= trig8;
+		else	
+			lo_mask8        <= '0';
+		end if;	
+	else
+		lo_mask1        <= '0';
+		lo_mask2        <= '0';
+		lo_mask3        <= '0';
+		lo_mask4        <= '0';
+		lo_mask5        <= '0';
+		lo_mask6        <= '0';
+		lo_mask7        <= '0';
+		lo_mask8        <= '0';
+	end if;		
+end if;			
+end if;
+end process;
+
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+    lo_fdce_clr1    <= '0';
+    lo_fdce_clr2    <= '0';
+    lo_fdce_clr3    <= '0';
+    lo_fdce_clr4    <= '0';
+else
+    
+if(lo_busy1 = '1') then 
+    if(lo_ch_buf1(5 downto 2)   = x"0") then
+        lo_fdce_clr1    <= trig1_pulx;
+    elsif(lo_ch_buf1(5 downto 2)   = x"4") then
+        lo_fdce_clr1    <= trig2_pulx;
+    elsif(lo_ch_buf1(5 downto 2)   = x"1") then
+        lo_fdce_clr1    <= trig3_pulx;
+    elsif(lo_ch_buf1(5 downto 2)   = x"5") then
+        lo_fdce_clr1    <= trig4_pulx; 
+    elsif(lo_ch_buf1(5 downto 2)   = x"2") then
+        lo_fdce_clr1    <= trig5_pulx;
+    elsif(lo_ch_buf1(5 downto 2)   = x"6") then
+        lo_fdce_clr1    <= trig6_pulx;
+    elsif(lo_ch_buf1(5 downto 2)   = x"3") then
+        lo_fdce_clr1    <= trig7_pulx;
+    elsif(lo_ch_buf1(5 downto 2)   = x"7") then
+        lo_fdce_clr1    <= trig8_pulx;
+    end if; 
+else
+    lo_fdce_clr1    <= '0';     
+end if;
+
+if(lo_busy2 = '1') then  
+    if(lo_ch_buf2(5 downto 2)   = x"0") then
+        lo_fdce_clr2    <= trig1_pulx;
+    elsif(lo_ch_buf2(5 downto 2)   = x"4") then
+        lo_fdce_clr2    <= trig2_pulx;
+    elsif(lo_ch_buf2(5 downto 2)   = x"1") then
+        lo_fdce_clr2    <= trig3_pulx;
+    elsif(lo_ch_buf2(5 downto 2)   = x"5") then
+        lo_fdce_clr2    <= trig4_pulx; 
+    elsif(lo_ch_buf2(5 downto 2)   = x"2") then
+        lo_fdce_clr2    <= trig5_pulx;
+    elsif(lo_ch_buf2(5 downto 2)   = x"6") then
+        lo_fdce_clr2    <= trig6_pulx;
+    elsif(lo_ch_buf2(5 downto 2)   = x"3") then
+        lo_fdce_clr2    <= trig7_pulx;
+    elsif(lo_ch_buf2(5 downto 2)   = x"7") then
+        lo_fdce_clr2    <= trig8_pulx;
+    end if;
+else
+    lo_fdce_clr2    <= '0';     
+end if;
+
+if(lo_busy3 = '1') then 
+    if(lo_ch_buf3(5 downto 2)   = x"0") then
+        lo_fdce_clr3    <= trig1_pulx;
+    elsif(lo_ch_buf3(5 downto 2)   = x"4") then
+        lo_fdce_clr3    <= trig2_pulx;
+    elsif(lo_ch_buf3(5 downto 2)   = x"1") then
+        lo_fdce_clr3    <= trig3_pulx;
+    elsif(lo_ch_buf3(5 downto 2)   = x"5") then
+        lo_fdce_clr3    <= trig4_pulx; 
+    elsif(lo_ch_buf3(5 downto 2)   = x"2") then
+        lo_fdce_clr3    <= trig5_pulx;
+    elsif(lo_ch_buf3(5 downto 2)   = x"6") then
+        lo_fdce_clr3    <= trig6_pulx;
+    elsif(lo_ch_buf3(5 downto 2)   = x"3") then
+        lo_fdce_clr3    <= trig7_pulx;
+    elsif(lo_ch_buf3(5 downto 2)   = x"7") then
+        lo_fdce_clr3    <= trig8_pulx;
+    end if;
+else
+    lo_fdce_clr3    <= '0';     
+end if;
+
+if(lo_busy4 = '1') then 
+    if(lo_ch_buf4(5 downto 2)   = x"0") then
+        lo_fdce_clr4    <= trig1_pulx;
+    elsif(lo_ch_buf4(5 downto 2)   = x"4") then
+        lo_fdce_clr4    <= trig2_pulx;
+    elsif(lo_ch_buf4(5 downto 2)   = x"1") then
+        lo_fdce_clr4    <= trig3_pulx;
+    elsif(lo_ch_buf4(5 downto 2)   = x"5") then
+        lo_fdce_clr4    <= trig4_pulx; 
+    elsif(lo_ch_buf4(5 downto 2)   = x"2") then
+        lo_fdce_clr4    <= trig5_pulx;
+    elsif(lo_ch_buf4(5 downto 2)   = x"6") then
+        lo_fdce_clr4    <= trig6_pulx;
+    elsif(lo_ch_buf4(5 downto 2)   = x"3") then
+        lo_fdce_clr4    <= trig7_pulx;
+    elsif(lo_ch_buf4(5 downto 2)   = x"7") then
+        lo_fdce_clr4    <= trig8_pulx;
+    end if; 
+else
+    lo_fdce_clr4    <= '0';     
+end if;
+
+end if;
+end if;
+end process;
+
+
+
+lo_trig1       <= lo_trig_buf1;
+lo_ch_no1      <= lo_ch_buf1; 
+lo_trig2       <= lo_trig_buf2;
+lo_ch_no2      <= lo_ch_buf2;  
+lo_trig3       <= lo_trig_buf3;
+lo_ch_no3      <= lo_ch_buf3;  
+lo_trig4       <= lo_trig_buf4;
+lo_ch_no4      <= lo_ch_buf4;  
+
+end Behavioral;

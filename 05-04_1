@@ -1,0 +1,42 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
+
+entity debounce_prog is
+generic(
+    counter_size  :  integer := 3);
+port(
+     clk     		: in  std_logic;                                
+	 din  			: in  std_logic;                                
+	 debounce_time	: in  std_logic_vector(counter_size downto 0);  
+	 dout  			: out std_logic := '0'
+	 ); 
+end debounce_prog;
+
+architecture behavioral of debounce_prog is
+
+signal fdce1       : std_logic := '0';                    
+signal fdce2       : std_logic := '0';                    
+signal counter_set : std_logic := '0';                    
+signal counter_out : std_logic_vector(counter_size downto 0) := (others => '0'); 
+
+begin
+
+counter_set <= fdce1 xor fdce2;   
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+    fdce1 <= din;
+    fdce2 <= fdce1;
+    if(counter_set = '1') then                  
+        counter_out <= (others => '0');
+	elsif(counter_out >= debounce_time) then 
+		dout <= fdce2;
+	else                                     
+		counter_out <= counter_out + 1;
+	end if;    
+end if;
+end process;
+
+end behavioral;

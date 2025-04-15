@@ -1,0 +1,96 @@
+
+inst_fdce : FDPE
+generic map (
+      INIT => '1')
+port map(
+        c   => clk,
+        d   => '0',
+        ce  => ddc_attu_en,
+        PRE => attu_disable, 
+        q   => attu_start_stop      -- 0 start 1 stop
+        );
+
+if_bw_sel_sw    <= bram_rd_data(18 downto 17);
+
+module_sel_sw(3 downto 2)  <= "00";
+module_sel_sw(1 downto 0)  <= bram_rd_addr(1 downto 0);
+
+bram_rd_addr1       <= bram_addr_ofset + bram_rd_addr; 
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+     
+    if(rst = '1' or attu_start_stop = '1') then
+        cnt     <= (others =>'0');
+    else
+        if cnt = 13  then
+            cnt     <= (others=>'0');
+        else
+            cnt     <= cnt + '1';       
+        end if;
+    end if;      
+    
+   if(rst = '1' or attu_start_stop = '1') then 
+        attu_cnt        <= "001"; --(others =>'0');
+   elsif(attu_cnt = 2 and cnt = 13 ) then
+        attu_cnt        <= "001"; --(others =>'0');
+   elsif(cnt = 13) then
+        attu_cnt        <= attu_cnt + '1'; 
+   else    
+        attu_cnt        <= attu_cnt;             
+   end if; 
+   
+    if(cnt >= 3 and cnt <= 7 ) then
+       if attu_cnt = "001" then                                  --RF
+            if_rf_sel_sw   <= ("10");
+            
+       elsif attu_cnt = "010" then                               --IF
+            if_rf_sel_sw   <= ("01");
+       else 
+            if_rf_sel_sw   <= ("00"); 
+       end if;             
+    else   
+        if_rf_sel_sw   <= ("00"); 
+    end if;   
+
+   if(attu_cnt = "001") then
+        lo_dca_ctrl_sw_t <= '0' & bram_rd_data(5 downto 0);    
+   elsif(attu_cnt = "010") then     
+        lo_dca_ctrl_sw_t <= '0' & bram_rd_data(11 downto 6);    
+   else
+        lo_dca_ctrl_sw_t <= (others =>'0');         
+   end if; 
+
+   if(rst = '1') then 
+        bram_rd_addr    <= (others =>'0');
+        attu_disable    <= '0'; 
+        module_trig1    <= '0';
+   elsif(attu_start_stop = '1') then 
+        bram_rd_addr    <= (others =>'0');
+        attu_disable    <= '0'; 
+        module_trig1    <= '0';
+   elsif(bram_rd_addr = 3 and attu_cnt = 2 and cnt = 13) then
+        bram_rd_addr    <= (others =>'0');
+        attu_disable    <= '1';    
+        module_trig1    <= '0'; 
+   elsif(attu_cnt = 2 and cnt = 13 and attu_disable = '0' ) then
+        bram_rd_addr    <= bram_rd_addr + '1';
+        module_trig1    <= '1';
+   else
+        bram_rd_addr    <= bram_rd_addr;   
+        module_trig1    <= '0'; 
+   end if;  
+   module_trig2 <= module_trig1;            
+end if;
+end process;
+
+PUL_GEN1: PUL_GEN 
+Port map ( CLK  => clk,
+           DIN  => not(ddc_attu_en),
+           DOUT => module_trigf 
+           );
+
+module_trig      <= module_trig2 or module_trigf;
+
+lo_dca_ctrl_sw   <= lo_dca_ctrl_sw_t;

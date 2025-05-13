@@ -1,0 +1,591 @@
+----- Stagger_PRI Tracker --------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use work.rwr_yea1859_project_pkg.all;
+
+entity Stagger_PRI_Tracker is
+port(   CLK 				: in std_logic ;                   
+		ENABLE				: in std_logic ;                   
+		pulse_in			: in std_logic ;
+		stagger_level		: in std_logic_vector(7 downto 0) ;      -- the pri and pw count.
+		pri_value           : in pri_data;
+        pw_value            : in pw_data; 
+		no_of_pulse_to_look	: in std_logic_vector(7 downto 0) ;
+		no_of_pulse_to_Jamm	: in std_logic_vector(23 downto 0) ;				  
+		Stagger_PRI    		: in std_logic ;
+		RESET           	: in std_logic 
+    );
+end Stagger_PRI_Tracker;
+
+architecture Behavioral of Stagger_PRI_Tracker is			
+
+signal pw_cntr  : std_logic_vector(31 downto 0); 
+
+signal pw_cntr_latch1  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch2  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch3  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch4  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch5  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch6  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch7  : std_logic_vector(31 downto 0); 
+signal pw_cntr_latch8  : std_logic_vector(31 downto 0);
+ 
+signal toa_cntr_latch1  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch2  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch3  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch4  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch5  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch6  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch7  : std_logic_vector(31 downto 0); 
+signal toa_cntr_latch8  : std_logic_vector(31 downto 0);
+signal toa_cntr_latch9  : std_logic_vector(31 downto 0);
+signal toa_diff_1  : std_logic_vector(31 downto 0);
+signal toa_diff_2  : std_logic_vector(31 downto 0);
+signal toa_diff_3  : std_logic_vector(31 downto 0);
+signal toa_diff_4  : std_logic_vector(31 downto 0);
+signal toa_diff_5  : std_logic_vector(31 downto 0);
+signal toa_diff_6  : std_logic_vector(31 downto 0);
+signal toa_diff_7  : std_logic_vector(31 downto 0);
+signal toa_diff_8  : std_logic_vector(31 downto 0);
+
+signal look_pass_cntr01  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr02  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr03  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr04  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr05  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr06  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr07  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr08  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr09  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr10  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr11  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr12  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr13  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr14  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr15  : std_logic_vector(7 downto 0); 
+signal look_pass_cntr16  : std_logic_vector(7 downto 0); 
+ 
+signal jamm_pass_cntr  : std_logic_vector(7 downto 0); 
+signal toa_cntr  : std_logic_vector(31 downto 0); 
+--signal cnt_a  : std_logic_vector(31 downto 0); 
+signal cnt_b  : std_logic_vector(31 downto 0);
+signal cnt_d  : std_logic_vector(31 downto 0);
+signal cnt_c  : std_logic_vector(9 downto 0) ;
+signal addra  : std_logic_vector(9 downto 0) ;
+signal douta  : std_logic_vector(63 downto 0);
+signal ena    : std_logic;
+signal preamble_pulse    : std_logic;
+signal pulse_in_1    : std_logic;
+signal pulse_in_2    : std_logic;
+
+signal fall_pulse_1		: std_logic;
+signal fall_pulse_2		: std_logic;
+signal fall_pulse_3		: std_logic;
+signal fall_pulse_4		: std_logic;
+signal fall_pulse_5		: std_logic;
+
+signal pp_rd_ena    : std_logic;
+signal pp_addrb    : std_logic_vector(7 downto 0);
+
+signal req_pri01    : std_logic_vector(31 downto 0);
+signal req_pri02    : std_logic_vector(31 downto 0);
+signal req_pri03    : std_logic_vector(31 downto 0);
+signal req_pri04    : std_logic_vector(31 downto 0);
+signal req_pri05    : std_logic_vector(31 downto 0);
+signal req_pri06    : std_logic_vector(31 downto 0);
+signal req_pri07    : std_logic_vector(31 downto 0);
+signal req_pri08    : std_logic_vector(31 downto 0);
+signal req_pri09    : std_logic_vector(31 downto 0);
+signal req_pri10    : std_logic_vector(31 downto 0);
+signal req_pri11    : std_logic_vector(31 downto 0);
+signal req_pri12    : std_logic_vector(31 downto 0);
+signal req_pri13    : std_logic_vector(31 downto 0);
+signal req_pri14    : std_logic_vector(31 downto 0);
+signal req_pri15    : std_logic_vector(31 downto 0);
+signal req_pri16    : std_logic_vector(31 downto 0);
+
+signal req_pw01    : std_logic_vector(31 downto 0);
+signal req_pw02    : std_logic_vector(31 downto 0);
+signal req_pw03    : std_logic_vector(31 downto 0);
+signal req_pw04    : std_logic_vector(31 downto 0);
+signal req_pw05    : std_logic_vector(31 downto 0);
+signal req_pw06    : std_logic_vector(31 downto 0);
+signal req_pw07    : std_logic_vector(31 downto 0);
+signal req_pw08    : std_logic_vector(31 downto 0);
+signal req_pw09    : std_logic_vector(31 downto 0);
+signal req_pw10    : std_logic_vector(31 downto 0);
+signal req_pw11    : std_logic_vector(31 downto 0);
+signal req_pw12    : std_logic_vector(31 downto 0);
+signal req_pw13    : std_logic_vector(31 downto 0);
+signal req_pw14    : std_logic_vector(31 downto 0);
+signal req_pw15    : std_logic_vector(31 downto 0);
+signal req_pw16    : std_logic_vector(31 downto 0);
+
+signal req_nop01    : std_logic_vector(7 downto 0);
+signal req_nop02    : std_logic_vector(7 downto 0);
+signal req_nop03    : std_logic_vector(7 downto 0);
+signal req_nop04    : std_logic_vector(7 downto 0);
+signal req_nop05    : std_logic_vector(7 downto 0);
+signal req_nop06    : std_logic_vector(7 downto 0);
+signal req_nop07    : std_logic_vector(7 downto 0);
+signal req_nop08    : std_logic_vector(7 downto 0);
+signal req_nop09    : std_logic_vector(7 downto 0);
+signal req_nop10    : std_logic_vector(7 downto 0);
+signal req_nop11    : std_logic_vector(7 downto 0);
+signal req_nop12    : std_logic_vector(7 downto 0);
+signal req_nop13    : std_logic_vector(7 downto 0);
+signal req_nop14    : std_logic_vector(7 downto 0);
+signal req_nop15    : std_logic_vector(7 downto 0);
+signal req_nop16    : std_logic_vector(7 downto 0);
+
+signal init_cntr    : std_logic_vector(7 downto 0);
+signal init_cntr1   : std_logic_vector(7 downto 0);
+signal freeze_check : std_logic;
+
+ 
+COMPONENT pgen_vhdl
+PORT(
+	din : IN std_logic;
+	clk : IN std_logic;          
+	dout : OUT std_logic
+	);
+END COMPONENT;
+
+	
+signal req_pw_mux    : std_logic_vector(31 downto 0);
+signal req_pri_mux   : std_logic_vector(31 downto 0);
+signal state_cnt     : std_logic_vector(1 downto 0) :=(others =>'0');    
+type state_type is ( st1,st2,st3);
+signal nextstate : state_type;
+
+
+attribute keep : string;
+attribute keep of  state_cnt      : signal is "true";
+attribute keep of  init_cntr      : signal is "true";
+attribute keep of  init_cntr1     : signal is "true";
+attribute keep of  toa_cntr       : signal is "true";
+attribute keep of  pulse_in       : signal is "true";
+attribute keep of  pw_cntr_latch1 : signal is "true";
+attribute keep of  toa_cntr_latch1 : signal is "true";
+attribute keep of  toa_cntr_latch2 : signal is "true";
+attribute keep of  toa_cntr_latch3 : signal is "true";
+attribute keep of  preamble_pulse  : signal is "true";
+attribute keep of  req_pri01  : signal is "true";
+attribute keep of  req_pri02  : signal is "true";
+attribute keep of  req_pri03  : signal is "true";
+attribute keep of  req_pw01  : signal is "true";
+attribute keep of  req_pw02  : signal is "true";
+attribute keep of  req_pw03  : signal is "true";
+attribute keep of  ENABLE  : signal is "true";
+attribute keep of  pw_cntr  : signal is "true";
+attribute keep of  pulse_in_2  : signal is "true";
+attribute keep of  pulse_in_1  : signal is "true";
+attribute keep of  fall_pulse_4  : signal is "true";
+attribute keep of  toa_diff_1  : signal is "true";
+attribute keep of  toa_diff_2  : signal is "true";
+attribute keep of  toa_diff_3  : signal is "true";
+attribute keep of  toa_diff_4  : signal is "true";
+attribute keep of  toa_diff_5  : signal is "true";
+attribute keep of  cnt_d  : signal is "true";
+attribute keep of  cnt_b  : signal is "true";
+attribute keep of  req_pw_mux   : signal is "true";
+attribute keep of  req_pri_mux  : signal is "true";
+attribute keep of  jamm_pass_cntr  : signal is "true";
+
+begin
+
+
+req_pri01 	<= pri_value(0);
+req_pri02 	<= pri_value(1);
+req_pri03 	<= pri_value(2);
+req_pri04 	<= pri_value(3);
+req_pri05 	<= pri_value(4);
+req_pri06 	<= pri_value(5);
+req_pri07 	<= pri_value(6);
+req_pri08 	<= pri_value(7);
+req_pri09 	<= pri_value(8);
+req_pri10 	<= pri_value(9);
+req_pri11 	<= pri_value(10);
+req_pri12 	<= pri_value(11);
+req_pri13 	<= pri_value(12);
+req_pri14 	<= pri_value(13);
+req_pri15 	<= pri_value(14);
+req_pri16 	<= pri_value(15);
+
+req_pw01  	<= pw_value(0); 
+req_pw02  	<= pw_value(1); 
+req_pw03  	<= pw_value(2); 
+req_pw04  	<= pw_value(3); 
+req_pw05  	<= pw_value(4); 
+req_pw06  	<= pw_value(5); 
+req_pw07  	<= pw_value(6); 
+req_pw08  	<= pw_value(7); 
+req_pw09  	<= pw_value(8); 
+req_pw10  	<= pw_value(9); 
+req_pw11  	<= pw_value(10);
+req_pw12  	<= pw_value(11);
+req_pw13  	<= pw_value(12);
+req_pw14  	<= pw_value(13);
+req_pw15  	<= pw_value(14);
+req_pw16  	<= pw_value(15);
+
+process(clk)
+begin
+if(rising_edge(clk))then
+	if(reset = '1')then
+		toa_cntr   <= x"00000000";
+	else
+		toa_cntr   <= toa_cntr + '1';
+	end if;		 
+end if;
+end process;
+		 
+
+process(clk)
+begin
+if(rising_edge(clk))then
+	pulse_in_1  <= pulse_in;
+	pulse_in_2  <= pulse_in_1;
+end if;
+end process;
+
+
+pgen_vhdl1: pgen_vhdl PORT MAP(
+	din => not pulse_in,
+	clk => clk,
+	dout => fall_pulse_1
+);
+
+
+process(clk)
+begin
+if(rising_edge(clk))then
+--	fall_pulse_2 <= fall_pulse_1;
+--	fall_pulse_3 <= fall_pulse_2;
+	fall_pulse_4 <= fall_pulse_1;	
+end if;
+end process;	
+
+	
+
+process(clk)
+begin
+if(rising_edge(clk))then
+		toa_diff_1      <= toa_cntr_latch1 - toa_cntr_latch2; 
+		toa_diff_2      <= toa_cntr_latch2 - toa_cntr_latch3; 
+		toa_diff_3      <= toa_cntr_latch3 - toa_cntr_latch4; 
+		toa_diff_4      <= toa_cntr_latch4 - toa_cntr_latch5; 
+		toa_diff_5      <= toa_cntr_latch5 - toa_cntr_latch6; 
+		toa_diff_6      <= toa_cntr_latch6 - toa_cntr_latch7; 
+		toa_diff_7      <= toa_cntr_latch7 - toa_cntr_latch8; 
+		toa_diff_8      <= toa_cntr_latch8 - toa_cntr_latch9;		
+	if(reset = '1')then
+		toa_cntr_latch1 <= x"00000000";
+		toa_cntr_latch2 <= x"00000000";
+		toa_cntr_latch3 <= x"00000000";
+		toa_cntr_latch4 <= x"00000000";
+		toa_cntr_latch5 <= x"00000000";
+		toa_cntr_latch6 <= x"00000000";
+		toa_cntr_latch7 <= x"00000000";
+		toa_cntr_latch8 <= x"00000000";			
+		toa_cntr_latch9 <= x"00000000";			
+	elsif(pulse_in_2 = '0' and pulse_in_1 = '1')then
+		toa_cntr_latch1 <= toa_cntr;
+		toa_cntr_latch2 <= toa_cntr_latch1;
+		toa_cntr_latch3 <= toa_cntr_latch2;
+		toa_cntr_latch4 <= toa_cntr_latch3;
+		toa_cntr_latch5 <= toa_cntr_latch4;
+		toa_cntr_latch6 <= toa_cntr_latch5;
+		toa_cntr_latch7 <= toa_cntr_latch6;
+		toa_cntr_latch8 <= toa_cntr_latch7;
+		toa_cntr_latch9 <= toa_cntr_latch8;		 
+	end if;		
+end if;
+end process;		
+
+process(clk)
+begin
+if(rising_edge(clk))then
+	if(reset = '1')then
+		pw_cntr 		<= x"00000000";
+		pw_cntr_latch1 	<= x"00000000";
+		pw_cntr_latch2 	<= x"00000000";
+		pw_cntr_latch3 	<= x"00000000";
+		pw_cntr_latch4 	<= x"00000000";
+		pw_cntr_latch5 	<= x"00000000";
+		pw_cntr_latch6 	<= x"00000000";
+		pw_cntr_latch7 	<= x"00000000";
+		pw_cntr_latch8 	<= x"00000000";		
+	elsif(pulse_in_2 = '0' and pulse_in_1 = '1')then
+		pw_cntr <= x"00000000";
+	elsif(pulse_in_2 = '1' and pulse_in_1 = '0')then
+		pw_cntr_latch1 <= pw_cntr;
+		pw_cntr_latch2 <= pw_cntr_latch1;
+		pw_cntr_latch3 <= pw_cntr_latch2;
+		pw_cntr_latch4 <= pw_cntr_latch3;
+		pw_cntr_latch5 <= pw_cntr_latch4;
+		pw_cntr_latch6 <= pw_cntr_latch5;
+		pw_cntr_latch7 <= pw_cntr_latch6;
+		pw_cntr_latch8 <= pw_cntr_latch7;
+	elsif(pulse_in_2 = '1')then
+		pw_cntr    <= pw_cntr + '1';
+	end if;		
+end if;		
+end process;
+
+process( CLK,RESET,nextstate )
+  begin
+   if ( RESET = '1') then		
+		nextstate 		<= st1;
+--		cnt_a 			<= (others => '0') ; 			
+		cnt_b 			<= (others => '0') ; 
+		cnt_c 			<= (others => '0') ; 
+		cnt_d 			<= (others => '0') ; 
+		state_cnt    	<= (others => '0') ; 
+		
+   elsif (CLK' event and CLK = '1') then
+   case nextstate is			  
+					
+     when st1 =>
+--	  			   cnt_a 						<= (others => '0') ; 			
+				   cnt_b 						<= (others => '0') ; 
+				   cnt_c 						<= (others => '0') ; 
+				   cnt_d 						<= (others => '0') ; 
+				   
+				   look_pass_cntr01 			<= (others => '0') ; 
+				   look_pass_cntr02 			<= (others => '0') ; 
+				   look_pass_cntr03 			<= (others => '0') ; 
+				   look_pass_cntr04 			<= (others => '0') ; 
+				   look_pass_cntr05 			<= (others => '0') ; 
+				   look_pass_cntr06 			<= (others => '0') ; 
+				   look_pass_cntr07 			<= (others => '0') ; 
+				   look_pass_cntr08 			<= (others => '0') ; 
+				   look_pass_cntr09 			<= (others => '0') ; 
+				   look_pass_cntr10 			<= (others => '0') ; 
+				   look_pass_cntr11 			<= (others => '0') ; 
+				   look_pass_cntr12 			<= (others => '0') ; 
+				   look_pass_cntr13 			<= (others => '0') ; 
+				   look_pass_cntr14 			<= (others => '0') ; 
+				   look_pass_cntr15 			<= (others => '0') ; 
+				   look_pass_cntr16 			<= (others => '0') ; 
+				   
+				   freeze_check					<= '0';
+				   jamm_pass_cntr 				<= (others => '0') ;
+				   preamble_pulse   			<= '0' ;   
+   					
+					if( ENABLE = '1' and Stagger_PRI = '1') then
+						nextstate 		<= st2 ;
+					end if ;				
+					state_cnt    	<= "01" ;	
+	 when st2 =>	 
+--	 				cnt_a 		<= cnt_a + '1'; 	
+	 				pp_rd_ena	<= '0';			
+	 				
+	 				if(fall_pulse_4 = '1')then
+	 					if(pw_cntr_latch1 > (req_pw01 - x"64") and pw_cntr_latch1 < (req_pw01 + x"64"))then
+	 					if(toa_diff_1 > (req_pri01 - x"64") and toa_diff_1 < (req_pri01 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"01";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw02 - x"64") and pw_cntr_latch1 < (req_pw02 + x"64"))then
+	 					if(toa_diff_1 > (req_pri02 - x"64") and toa_diff_1 < (req_pri02 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"02";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw03 - x"64") and pw_cntr_latch1 < (req_pw03 + x"64"))then
+	 					if(toa_diff_1 > (req_pri03 - x"64") and toa_diff_1 < (req_pri03 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"03";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw04 - x"64") and pw_cntr_latch1 < (req_pw04 + x"64"))then
+	 					if(toa_diff_1 > (req_pri04 - x"64") and toa_diff_1 < (req_pri04 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"04";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw05 - x"64") and pw_cntr_latch1 < (req_pw05 + x"64"))then
+	 					if(toa_diff_1 > (req_pri05 - x"64") and toa_diff_1 < (req_pri05 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"05";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw06 - x"64") and pw_cntr_latch1 < (req_pw06 + x"64"))then
+	 					if(toa_diff_1 > (req_pri06 - x"64") and toa_diff_1 < (req_pri06 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"06";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw07 - x"64") and pw_cntr_latch1 < (req_pw07 + x"64"))then
+	 					if(toa_diff_1 > (req_pri07 - x"64") and toa_diff_1 < (req_pri07 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"07";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw08 - x"64") and pw_cntr_latch1 < (req_pw08 + x"64"))then
+	 					if(toa_diff_1 > (req_pri08 - x"64") and toa_diff_1 < (req_pri08 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"08";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw09 - x"64") and pw_cntr_latch1 < (req_pw09 + x"64"))then
+	 					if(toa_diff_1 > (req_pri09 - x"64") and toa_diff_1 < (req_pri09 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"09";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw10 - x"64") and pw_cntr_latch1 < (req_pw10 + x"64"))then
+	 					if(toa_diff_1 > (req_pri10 - x"64") and toa_diff_1 < (req_pri10 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"0A";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw11 - x"64") and pw_cntr_latch1 < (req_pw11 + x"64"))then
+	 					if(toa_diff_1 > (req_pri11 - x"64") and toa_diff_1 < (req_pri11 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"0B";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw12 - x"64") and pw_cntr_latch1 < (req_pw12 + x"64"))then
+	 					if(toa_diff_1 > (req_pri12 - x"64") and toa_diff_1 < (req_pri12 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"0C";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw13 - x"64") and pw_cntr_latch1 < (req_pw13 + x"64"))then
+	 					if(toa_diff_1 > (req_pri13 - x"64") and toa_diff_1 < (req_pri13 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"0D";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw14 - x"64") and pw_cntr_latch1 < (req_pw14 + x"64"))then
+	 					if(toa_diff_1 > (req_pri14 - x"64") and toa_diff_1 < (req_pri14 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"0E";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw15 - x"64") and pw_cntr_latch1 < (req_pw15 + x"64"))then
+	 					if(toa_diff_1 > (req_pri15 - x"64") and toa_diff_1 < (req_pri15 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"0F";
+	 					end if;
+						end if;
+	 					if(pw_cntr_latch1 > (req_pw16 - x"64") and pw_cntr_latch1 < (req_pw16 + x"64"))then
+	 					if(toa_diff_1 > (req_pri16 - x"64") and toa_diff_1 < (req_pri16 + x"64"))then
+	 						look_pass_cntr01 <= look_pass_cntr01 + '1';
+	 						nextstate <= st3 ;
+	 						init_cntr <= x"10";
+	 					end if;
+						end if;
+											
+					end if;
+                    
+                    if(init_cntr  = stagger_level) then
+                       init_cntr1  <= (others =>'0');
+                    else   
+                       init_cntr1   <= init_cntr;
+                    end if;
+                    state_cnt    	<= "10" ;
+     when st3 =>
+     				
+--	  			   cnt_a 			<= (others => '0') ; 			
+				   
+				   if(cnt_b = (req_pri_mux - x"6"))then
+				   		cnt_b 	<= x"00000000";
+				   else				    
+				   		cnt_b 	<= cnt_b + '1';
+				   end if;				   		 
+				   
+				   if( cnt_b = req_pri_mux - req_pw_mux - x"64") then
+						preamble_pulse   <= '1' ;
+				   elsif(cnt_d = req_pw_mux + x"C8")then
+						preamble_pulse   <= '0' ;
+						cnt_d			 <= x"00000000";
+						jamm_pass_cntr	 <= jamm_pass_cntr + '1';
+						if(init_cntr1 = (stagger_level - '1'))then	
+							init_cntr1        <= x"00";
+						else													
+							init_cntr1		 <= init_cntr1 + '1';
+						end if;							
+					elsif(preamble_pulse = '1' ) then
+						cnt_d 			 <= cnt_d + '1';
+					end if;	   
+   					
+					if(jamm_pass_cntr = (no_of_pulse_to_Jamm - '1') ) then
+						nextstate <= st1 ;
+					end if ;	
+					
+					if(init_cntr1 = 0)then
+						req_pri_mux <= req_pri01;
+						req_pw_mux  <= req_pw01;
+					elsif(init_cntr1 = 1)then
+						req_pri_mux <= req_pri02;
+						req_pw_mux  <= req_pw02;
+					elsif(init_cntr1 = 2)then
+						req_pri_mux <= req_pri03;
+						req_pw_mux  <= req_pw03;
+					elsif(init_cntr1 = 3)then
+						req_pri_mux <= req_pri04;
+						req_pw_mux  <= req_pw04;
+					elsif(init_cntr1 = 4)then
+						req_pri_mux <= req_pri05;
+						req_pw_mux  <= req_pw05;
+					elsif(init_cntr1 = 5)then
+						req_pri_mux <= req_pri06;
+						req_pw_mux  <= req_pw06;
+					elsif(init_cntr1 = 6)then
+						req_pri_mux <= req_pri07;
+						req_pw_mux  <= req_pw07;
+					elsif(init_cntr1 = 7)then
+						req_pri_mux <= req_pri08;
+						req_pw_mux  <= req_pw08;
+					elsif(init_cntr1 = 8)then
+						req_pri_mux <= req_pri09;
+						req_pw_mux  <= req_pw09;
+					elsif(init_cntr1 = 9)then
+						req_pri_mux <= req_pri10;
+						req_pw_mux  <= req_pw10;
+					elsif(init_cntr1 = 10)then
+						req_pri_mux <= req_pri11;
+						req_pw_mux  <= req_pw11;
+					elsif(init_cntr1 = 11)then
+						req_pri_mux <= req_pri12;
+						req_pw_mux  <= req_pw12;
+					elsif(init_cntr1 = 12)then
+						req_pri_mux <= req_pri13;
+						req_pw_mux  <= req_pw13;
+					elsif(init_cntr1 = 13)then
+						req_pri_mux <= req_pri14;
+						req_pw_mux  <= req_pw14;
+					elsif(init_cntr1 = 14)then
+						req_pri_mux <= req_pri15;
+						req_pw_mux  <= req_pw15;
+					elsif(init_cntr1 = 15)then
+						req_pri_mux <= req_pri16;
+						req_pw_mux  <= req_pw16;
+					end if;			
+	 				state_cnt    	<= "11" ;
+	end case ;
+end if;	
+end process;
+
+end;	

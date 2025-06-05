@@ -1,0 +1,117 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+entity PRI_PW_Generator is
+	port( 	    CLK 				: in std_logic ;                   
+				ENABLE				: in std_logic ;                   
+				pulse_out			: out std_logic ;                   
+				RESET           	: in std_logic  );
+end PRI_PW_Generator;
+
+architecture Behavioral of PRI_PW_Generator is			
+
+signal cnt_a  : std_logic_vector(31 downto 0) ; 
+signal cnt_b  : std_logic_vector(31 downto 0) ;
+signal cnt_c  : std_logic_vector(9 downto 0) ;
+signal addra  : std_logic_vector(9 downto 0) ;
+signal douta  : std_logic_vector(63 downto 0) ;
+signal ena  : std_logic;
+
+COMPONENT PRI_PW_gen_0
+  PORT (
+    clka : IN STD_LOGIC;
+    ena : IN STD_LOGIC;
+    addra : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
+    douta : OUT STD_LOGIC_VECTOR(63 DOWNTO 0)
+  );
+END COMPONENT;
+
+ 
+type state_type is ( st1,st2,st3);
+signal nextstate : state_type;
+
+begin
+
+I_PRI_PW_gen_0 : PRI_PW_gen_0
+  PORT MAP (
+    clka => clk,
+    ena => ena,
+    addra => addra,
+    douta => douta
+  );
+
+
+process( CLK,RESET,nextstate )
+  begin
+   if ( RESET = '1') then		
+		nextstate 		<= st1;
+		cnt_a 			<= (others => '0') ; 			
+		cnt_b 			<= (others => '0') ; 
+		cnt_c 			<= (others => '0') ; 
+        pulse_out       <= '0' ; 
+   elsif (CLK' event and CLK = '1') then
+   case nextstate is			  
+					
+     when st1 =>
+	  			   cnt_a 			<= (others => '0') ; 			
+				   cnt_b 			<= (others => '0') ; 
+				   
+				   pulse_out        <= '0' ;   
+   					
+					if( ENABLE = '1') then
+						nextstate <= st2 ;
+						addra     <= cnt_c(9 downto 0);
+						cnt_c     <= cnt_c + '1';
+						ena		  <= '1';
+				    else
+				    	ena		  <= '0';						
+					end if ;				
+						
+	 when st2 =>	 
+	 				ena		  	<= '0';	
+	 				cnt_a 		<= cnt_a + '1';
+	 				
+	 				if(cnt_a = 0)then
+	 					pulse_out        <= '1' ; 
+	 				elsif(cnt_a = douta(31 downto 0))then
+	 					pulse_out        <= '0' ;
+	 				end if;
+	 				
+	 				if(cnt_a = douta(63 downto 32)- x"2")then
+	 					nextstate <= st3 ;
+	 				end if;
+	 				
+     when st3 =>
+	  			   cnt_a 			<= (others => '0') ; 			
+				   cnt_b 			<= (others => '0') ; 
+				   
+				   pulse_out        <= '0' ;   
+   					
+					if( ENABLE = '1') then
+						nextstate <= st2 ;
+						addra     <= cnt_c(9 downto 0);
+						cnt_c     <= cnt_c + '1';
+						ena		  <= '1';
+				    else
+				    	ena		  <= '0';	
+				    	nextstate <= st1 ;					
+					end if ;				
+	 				
+	 				
+	 				
+	end case ;
+  end if;
+end process;
+
+
+
+
+
+
+end;	
+
+
+
+

@@ -1,0 +1,181 @@
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+entity Cover_Pulse is
+
+  port (	  clk	                   :  in std_logic ;  			
+			  reset   			       :  in std_logic ;
+			  cover_pulse_en   		   :  in std_logic ;
+              pri_in1                  :  in std_logic_vector(19 downto 0);    
+              pw_in1                   :  in std_logic_vector(19 downto 0);    
+              valid_in                 :  in std_logic ;            
+              data_out_en              :  out std_logic );			
+end Cover_Pulse;
+
+architecture Behavioral of Cover_Pulse is
+
+COMPONENT pgen_vhdl
+  port (  
+			din  : in std_logic;
+			clk  : in std_logic;
+			dout  : out std_logic);
+END COMPONENT;
+
+signal valid_in_pulse1  : std_Logic := '0';
+signal valid_in_pulse2  : std_Logic := '0';
+signal valid_in_pulse3  : std_Logic := '0';
+signal valid_in_pulse4  : std_Logic := '0';
+signal valid_in_pulse5  : std_Logic := '0';
+signal valid_in_pulse6  : std_Logic := '0';
+
+
+signal fsm_en1          : std_Logic := '0';
+signal fsm_en2          : std_Logic := '0';
+signal fsm_cntr         : std_Logic := '0';
+signal cover_1          : std_Logic := '0';
+signal cover_2          : std_Logic := '0';
+
+signal pri_cnr1         : std_Logic_vector(19 downto 0) := (others =>'0');
+signal pri_cnr2         : std_Logic_vector(19 downto 0) := (others =>'0');
+signal pw_cnr1          : std_Logic_vector(19 downto 0) := (others =>'0');
+signal pw_cnr2          : std_Logic_vector(19 downto 0) := (others =>'0');
+
+signal COMP_CNT1        : std_Logic_vector(19 downto 0) := (others =>'0');
+signal COMP_CNT2        : std_Logic_vector(19 downto 0) := (others =>'0');
+
+type state1 is ( idle1,data_receive1,data_send1);
+signal n_s1 : state1 := idle1;
+
+
+type state2 is ( idle2,data_receive2,data_send2);
+signal n_s2 : state2 := idle2;
+
+--attribute MARK_DEBUG : string;
+--attribute MARK_DEBUG of fsm_en1 : signal is "TRUE";
+--attribute MARK_DEBUG of fsm_en2 : signal is "TRUE";
+
+begin
+
+I2_pgen_vhdl : pgen_vhdl
+  PORT MAP (
+    din  => not valid_in,
+    clk  => clk,
+    dout => valid_in_pulse2 );
+
+process(clk)
+begin
+if(rising_edge(clk))then
+    valid_in_pulse3 <= valid_in_pulse2;
+    valid_in_pulse4 <= valid_in_pulse3;
+    valid_in_pulse5 <= valid_in_pulse4;
+end if;
+end process;    
+    
+process(clk)
+begin
+if(rising_edge(clk))then
+    COMP_CNT1 <= pri_in1 - pw_in1 - x"9E";      --- 2.51368 Us cover pulse.
+    COMP_CNT2 <= pri_in1 - pw_in1 - x"9E";
+end if;
+end process; 
+    
+process(clk)
+begin
+if(rising_edge(clk))then
+    if(reset = '1')then
+        fsm_cntr <= '0';
+        fsm_en1  <= '0';
+        fsm_en2  <= '0';
+    elsif(fsm_cntr = '0' and valid_in_pulse5 = '1')then
+        fsm_cntr  <= '1';
+        fsm_en1   <= '1';
+    elsif(fsm_cntr = '1' and valid_in_pulse5 = '1')then
+        fsm_cntr  <= '0';
+        fsm_en2   <= '1';
+    else
+        fsm_en1  <= '0';
+        fsm_en2  <= '0';
+    end if;
+end if;
+end process;    
+  
+         
+process(clk)
+begin
+if(reset = '1') then
+	n_s1       <= idle1;
+	pri_cnr1   <= x"00000";
+	pw_cnr1   <= x"00000";
+    cover_1    <= '0';
+    
+elsif(rising_edge(clk)) then
+
+	case n_s1 is
+		when idle1	=>
+                 pri_cnr1         <= x"00000";
+                 pw_cnr1         <= x"00000";
+                 cover_1          <= '0';
+                 if(fsm_en1 = '1' and cover_pulse_en = '1')then
+                    n_s1              <= data_receive1;			
+                 end if;
+			    
+		 when data_receive1 =>	
+		        pri_cnr1  <= pri_cnr1 + '1';                
+                cover_1   <= '0';
+                if(pri_cnr1 = COMP_CNT1)then
+                    n_s1              <= data_send1;
+                end if;
+                                
+		 when data_send1 =>	
+		        pw_cnr1  <= pw_cnr1 + '1';                
+                cover_1   <= '1';
+                if(pw_cnr1 = (pw_in1 + x"D6"))then     --  1 Usec cover pulse.      -- 2500(9D) + 1000(3B) = D6
+                    n_s1              <= idle1;
+                end if;
+                                
+	end case;
+end if;
+end process;    
+
+process(clk)
+begin
+if(reset = '1') then
+	n_s2       <= idle2;
+	pri_cnr2   <= x"00000";
+	pw_cnr2   <= x"00000";
+	cover_2    <= '0';
+elsif(rising_edge(clk)) then
+	
+	case n_s2 is
+		when idle2	=>
+		     pri_cnr2         <= x"00000";
+		     pw_cnr2         <= x"00000";
+		     cover_2          <= '0';
+			if(fsm_en2 = '1'  and cover_pulse_en = '1')then
+			    n_s2              <= data_receive2;			
+			end if;
+			    
+		 when data_receive2 =>	
+		        pri_cnr2  <= pri_cnr2 + '1';                
+                cover_2   <= '0';
+                if(pri_cnr2 = COMP_CNT2)then
+                    n_s2              <= data_send2;
+                end if;
+                                
+		 when data_send2 =>	
+		        pw_cnr2  <= pw_cnr2 + '1';                
+                cover_2   <= '1';
+                if(pw_cnr2 = (pw_in1 + x"D6"))then
+                    n_s2              <= idle2;
+                end if;
+                                
+	end case;
+end if;
+end process;    
+
+data_out_en  <= cover_1 or cover_2;
+ 
+end Behavioral;

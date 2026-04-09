@@ -1,0 +1,360 @@
+--------------------------------------------------------------------------------
+-- Company: 
+-- Engineer:
+--
+-- Create Date:   12:24:06 02/17/2026
+-- Design Name:   
+-- Module Name:   D:/Ahmed/eg/TB_jamming_seq.vhd
+-- Project Name:  eg
+-- Target Device:  
+-- Tool versions:  
+-- Description:   
+-- 
+-- VHDL Test Bench Created by ISE for module: jamming_seq
+-- 
+-- Dependencies:
+-- 
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+--
+-- Notes: 
+-- This testbench has been automatically generated using types std_logic and
+-- std_logic_vector for the ports of the unit under test.  Xilinx recommends
+-- that these types always be used for the top-level I/O of a design in order
+-- to guarantee that the testbench will bind correctly to the post-implementation 
+-- simulation model.
+--------------------------------------------------------------------------------
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+ 
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--USE ieee.numeric_std.ALL;
+ 
+ENTITY TB_jamming_seq IS
+END TB_jamming_seq;
+ 
+ARCHITECTURE behavior OF TB_jamming_seq IS 
+ 
+    -- Component Declaration for the Unit Under Test (UUT)
+ 
+    COMPONENT jamming_seq
+    PORT(
+         clk : IN  std_logic;
+         rst : IN  std_logic;
+         jamm_en : IN  std_logic;
+         jammer_lookthrough : IN  std_logic;
+         rgpo : IN  std_logic;
+         rgpi : IN  std_logic;
+         coverpulse_tech : IN  std_logic;
+         RANRAP_en : IN  std_logic;
+         tx_cover_en : IN  std_logic;
+         range_gate_noise : IN  std_logic;
+         away : IN  std_logic;
+         pulse_noise : IN  std_logic;
+         switch_dwell_en : IN  std_logic;
+         present_range : IN  std_logic_vector(19 downto 0);
+         difm_freq_match : IN  std_logic;
+         difm_freq_match1 : IN  std_logic;
+         ddc_lock_status : IN  std_logic;
+         pulse_131072_i : IN  std_logic;
+         pri_max : IN  std_logic_vector(31 downto 0);
+         pw_max : IN  std_logic_vector(31 downto 0);
+         range_offset_i : IN  std_logic_vector(19 downto 0);
+         stagger_level : IN  std_logic_vector(7 downto 0);
+         pri_offset : IN  std_logic_vector(7 downto 0);
+         pw_offset : IN  std_logic_vector(7 downto 0);
+         PW_increase_reg : IN  std_logic_vector(31 downto 0);
+         temp_1           : IN  std_logic_vector(31 downto 0);  --------
+         target_DUC_fir_offset : IN  std_logic_vector(7 downto 0);
+         sync_cnt : IN  std_logic_vector(3 downto 0);
+         jamm_cnt : IN  std_logic_vector(23 downto 0);
+         look_through_cnt : IN  std_logic_vector(3 downto 0);
+         pw_verify_cnt : IN  std_logic_vector(7 downto 0);
+         sync_err_cnt : IN  std_logic_vector(7 downto 0);
+         sub : IN  std_logic_vector(7 downto 0);
+         retrigger_cnt : IN  std_logic_vector(31 downto 0);
+         break_cnt : IN  std_logic_vector(15 downto 0);
+         debug_sync_cnt : OUT  std_logic_vector(31 downto 0);
+         debug_jamm_cnt : OUT  std_logic_vector(31 downto 0);
+         debug_look_cnt : OUT  std_logic_vector(31 downto 0);
+         sync_fail_cnt : OUT  std_logic_vector(31 downto 0);
+         pw_o : OUT  std_logic_vector(31 downto 0);
+         pri_o : OUT  std_logic_vector(31 downto 0);
+         range_offset_o : OUT  std_logic_vector(19 downto 0);
+         index_o : OUT  std_logic_vector(7 downto 0);
+         sync_done : OUT  std_logic;
+         Jamming_fail : OUT  std_logic;
+         local_jam_en : OUT  std_logic;
+         LO_en : OUT  std_logic;
+         gen_pusle_o : OUT  std_logic;
+         target_sim_trig : OUT  std_logic;
+         pri_match_o : OUT  std_logic;
+         state_cnt_o : OUT  std_logic_vector(2 downto 0);
+         tx_lo_en_trig : OUT  std_logic;
+         noise_target_pulse : OUT  std_logic;
+         coverpulse_en : OUT  std_logic
+        );
+    END COMPONENT;
+    
+    component PRI_PW_Generator is
+	port( 	    CLK 				: in std_logic ;                   
+				ENABLE				: in std_logic ;                   
+				pulse_out			: out std_logic ;                   
+				RESET           	: in std_logic  );
+    end component;
+    
+  COMPONENT delay_fifo
+  PORT (
+    rst : IN STD_LOGIC;
+    wr_clk : IN STD_LOGIC;
+    rd_clk : IN STD_LOGIC;
+    din : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+    wr_en : IN STD_LOGIC;
+    rd_en : IN STD_LOGIC;
+    prog_full_thresh : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
+    dout : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
+    full : OUT STD_LOGIC;
+    empty : OUT STD_LOGIC;
+    prog_full : OUT STD_LOGIC
+    );
+  END COMPONENT;
+
+   --Inputs
+   signal clk : std_logic := '0';
+   signal rst : std_logic := '0';
+   signal jamm_en : std_logic := '0';
+   signal jammer_lookthrough : std_logic := '0';
+   signal rgpo : std_logic := '0';
+   signal rgpi : std_logic := '0';
+   signal coverpulse_tech : std_logic := '0';
+   signal RANRAP_en : std_logic := '0';
+   signal range_gate_noise : std_logic := '0';
+   signal away : std_logic := '0';
+   signal pulse_noise : std_logic := '0';
+   signal present_range : std_logic_vector(19 downto 0) := x"00010";
+   signal difm_freq_match : std_logic := '0';
+   signal difm_freq_match1 : std_logic := '0';
+   signal ddc_lock_status : std_logic := '0';
+   signal pulse_131072_i : std_logic := '0';
+   signal range_offset_i : std_logic_vector(19 downto 0) := (others => '0');
+
+   signal tx_cover_en           : std_logic                     := '1';
+   signal pri_max               : std_logic_vector(31 downto 0) := x"00002C88";
+   signal pw_max                : std_logic_vector(31 downto 0) := (others => '0');
+   signal retrigger_cnt         : std_logic_vector(31 downto 0) := (others => '1');
+   signal break_cnt             : std_logic_vector(15 downto 0) := (others => '1');
+   signal stagger_level	        : std_logic_vector(7 downto 0)  := x"05" ;      -- the pri and pw count.
+   signal switch_dwell_en       : std_logic                     := '0';
+   signal pri_offset            : std_logic_vector(7 downto 0)  := x"0f";
+   signal pw_offset             : std_logic_vector(7 downto 0)  := x"0f";
+   signal PW_increase_reg       : std_logic_vector(31 downto 0) := x"00000000";
+   signal temp                  : std_logic_vector(31 downto 0) := x"00000000";
+   signal DUC_fir_offset        : std_logic_vector(7 downto 0)  := x"46";
+   signal sync_cnt              : std_logic_vector(3 downto 0)  := x"4";
+   signal jamm_cnt              : std_logic_vector(23 downto 0) := x"00000b";
+   signal look_through_cnt      : std_logic_vector(3 downto 0)  := x"4";
+   signal pw_verify_cnt         : std_logic_vector(7 downto 0)  := x"3c";
+   signal sub                   : std_logic_vector(7 downto 0)  := x"09";
+   signal target_DUC_fir_offset : std_logic_vector(7 downto 0)  := x"48";
+   signal sync_err_cnt          : std_logic_vector(7 downto 0)  := x"04";
+
+ 	--Outputs
+   signal debug_sync_cnt : std_logic_vector(31 downto 0);
+   signal debug_jamm_cnt : std_logic_vector(31 downto 0);
+   signal debug_look_cnt : std_logic_vector(31 downto 0);
+   signal sync_fail_cnt : std_logic_vector(31 downto 0);
+   signal pw_o : std_logic_vector(31 downto 0);
+   signal pri_o : std_logic_vector(31 downto 0);
+   signal range_offset_o : std_logic_vector(19 downto 0);
+   signal index_o : std_logic_vector(7 downto 0);
+   signal sync_done : std_logic;
+   signal Jamming_fail : std_logic;
+   signal local_jam_en : std_logic;
+   signal LO_en : std_logic;
+   signal gen_pusle_o : std_logic;
+   signal target_sim_trig : std_logic;
+   signal pri_match_o : std_logic;
+   signal state_cnt_o : std_logic_vector(2 downto 0);
+   signal tx_lo_en_trig : std_logic;
+   signal noise_target_pulse : std_logic;
+   signal coverpulse_en : std_logic;
+
+		signal ENABLE	     	: std_logic ;                   
+		signal pulse_out		: std_logic ;                   
+		signal pulse_out1		: std_logic_vector(31 downto 0) := (others =>'0');                   
+		signal pulse_out2		: std_logic ;                   
+		signal pulse_out3		: std_logic ;                   
+		signal RESET           	: std_logic ;
+		signal clk_60mhz           	: std_logic ;
+		signal clk_100mhz           : std_logic ;
+		signal prog_full            : std_logic := '0';            
+		signal pulse_out_1          : std_logic_vector(0 downto 0) := (others =>'0');            
+		signal pulse_out_2          : std_logic_vector(0 downto 0) := (others =>'0');            
+        
+        
+   -- Clock period definitions
+   constant clk_100_mhz_period : time := 10 ns;
+   constant clk_T1_adc_period : time := 4.44 ns;            -- 360 Mhz
+   constant clk_60mhz_period : time := 16.666 ns;           
+   constant adc_fab_clk_T1_period : time := 2.77 ns;        -- 225 Mhz
+ 
+BEGIN
+ 
+	-- Instantiate the Unit Under Test (UUT)
+   uut: jamming_seq PORT MAP (
+          clk => clk_60mhz,
+          rst => reset,
+          jamm_en => jamm_en,
+          jammer_lookthrough => jammer_lookthrough,
+          rgpo => rgpo,
+          rgpi => rgpi,
+          coverpulse_tech => coverpulse_tech,
+          RANRAP_en => RANRAP_en,
+          tx_cover_en => tx_cover_en,
+          range_gate_noise => range_gate_noise,
+          away => away,
+          pulse_noise => pulse_noise,
+          switch_dwell_en => switch_dwell_en,
+          present_range => present_range,
+          difm_freq_match           => pulse_out_1(0) and not(local_jam_en) and LO_en,
+          difm_freq_match1          => pulse_out1(15) and not(local_jam_en) and LO_en,
+          ddc_lock_status           => LO_en, --(pulse_out or pulse_out3) and LO_en   , 
+          pulse_131072_i => pulse_131072_i,
+          pri_max => pri_max,
+          pw_max => pw_max,
+          range_offset_i => range_offset_i,
+          stagger_level => stagger_level,
+          pri_offset => pri_offset,
+          pw_offset => pw_offset,
+          PW_increase_reg => PW_increase_reg,
+          temp_1          => temp,    ---
+          target_DUC_fir_offset => target_DUC_fir_offset,
+          sync_cnt => sync_cnt,
+          jamm_cnt => jamm_cnt,
+          look_through_cnt => look_through_cnt,
+          pw_verify_cnt => pw_verify_cnt,
+          sync_err_cnt => sync_err_cnt,
+          sub => sub,
+          retrigger_cnt => retrigger_cnt,
+          break_cnt => break_cnt,
+          debug_sync_cnt => debug_sync_cnt,
+          debug_jamm_cnt => debug_jamm_cnt,
+          debug_look_cnt => debug_look_cnt,
+          sync_fail_cnt => sync_fail_cnt,
+          pw_o => pw_o,
+          pri_o => pri_o,
+          range_offset_o => range_offset_o,
+          index_o => index_o,
+          sync_done => sync_done,
+          Jamming_fail => Jamming_fail,
+          local_jam_en => local_jam_en,
+          LO_en => LO_en,
+          gen_pusle_o => gen_pusle_o,
+          target_sim_trig => target_sim_trig,
+          pri_match_o => pri_match_o,
+          state_cnt_o => state_cnt_o,
+          tx_lo_en_trig => tx_lo_en_trig,
+          noise_target_pulse => noise_target_pulse,
+          coverpulse_en => coverpulse_en
+        );
+
+uut1 :  PRI_PW_Generator 
+	port map(   CLK 				=> clk_100mhz,                
+				ENABLE				=> enable,                
+				pulse_out			=> pulse_out,                 
+				RESET           	=> reset
+				);
+
+pulse_out_1(0) <= pulse_out;
+				
+your_instance_name : delay_fifo
+  PORT MAP (
+    rst => rst,
+    wr_clk => clk_60mhz,
+    rd_clk => clk_60mhz,
+    din => pulse_out_1,
+    wr_en => '1',
+    rd_en => prog_full,
+    prog_full_thresh => "00" & x"1D",
+    dout => pulse_out_2,
+    full => open,
+    empty => open,
+    prog_full => prog_full
+  );
+  			
+   clk_60mhz_process :process
+   begin
+		clk_60mhz <= '0';
+		wait for clk_60mhz_period/2;
+		clk_60mhz <= '1';
+		wait for clk_60mhz_period/2;
+   end process;
+ 
+   clk_100mhz_process :process
+   begin
+		clk_100mhz <= '0';
+		wait for clk_100_mhz_period/2;
+		clk_100mhz <= '1';
+		wait for clk_100_mhz_period/2;
+   end process;
+ 
+
+process(clk_60mhz)
+begin
+if(rising_EdgE(clk_60mhz)) then
+    pulse_out1  <= pulse_out1(30 downto 0) & pulse_out_1(0);
+--    pulse_out2  <= pulse_out1;
+--    pulse_out3  <= pulse_out2;
+end if;
+end process;
+
+   -- Stimulus process
+   stim_proc: process
+   begin		
+      -- hold reset state for 100 ns.
+      wait for clk_60mhz_period * 10;
+      reset <= '1';
+       wait for clk_60mhz_period * 10;
+        reset <= '0';
+       wait for clk_60mhz_period * 10;
+        enable  <= '1';
+        wait for clk_60mhz_period * 10;
+       jamm_en      <= '1'; 
+      wait;
+   end process;
+
+proc_1 : process
+begin
+wait for 300 us;
+present_range  <= x"00010";
+wait for 300 us;
+present_range  <= x"00015";
+wait for 300 us;
+present_range  <= x"00020";
+wait for 300 us;
+present_range  <= x"00025";
+wait for 300 us;
+present_range  <= x"00030";
+wait for 300 us;
+present_range  <= x"00035";
+wait for 300 us;
+present_range  <= x"00040";
+wait for 300 us;
+present_range  <= x"00045";
+wait for 300 us;
+present_range  <= x"00050";
+--wait;
+end process;
+
+--proc_2 : process
+--begin
+--wait for 1.0 ms;
+--jammer_lookthrough  <= '1';
+--wait for 100 us;
+--jammer_lookthrough  <= '0';
+----wait;
+--end process;
+
+END;

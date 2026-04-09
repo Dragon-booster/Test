@@ -1,0 +1,1320 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_unsigned.ALL;
+--use IEEE.std_logic_arith.ALL;
+use IEEE.numeric_std.all;
+--use work.rwr_yea1859_project_pkg.all;
+
+library UNISIM;
+use UNISIM.VComponents.all;
+
+entity jamming_seq is
+Port (  clk                         : in std_logic;     --- 60 Mhz
+        rst                         : in std_logic;
+        jamm_en                     : in std_logic;
+        jammer_lookthrough          : in std_logic;
+        rgpo                        : in std_logic;
+        rgpi                        : in std_logic;
+        coverpulse_tech             : in std_logic;
+        RANRAP_en                   : in std_logic;
+        tx_cover_en                 : in std_logic;
+        range_gate_noise            : in std_logic;
+        away                        : in std_logic;
+        pulse_noise                 : in std_logic;
+        switch_dwell_en             : in std_logic;
+        present_range               : in std_logic_vector(19 downto 0);
+        difm_freq_match             : in std_logic;             -- log detector
+        difm_freq_match1            : in std_logic;             -- frequency match
+        ddc_lock_status             : in std_logic;             -- Lock status fron the priority encoder
+        pulse_131072_i              : in std_logic;             
+        pri_max                     : in std_logic_vector(31 downto 0);
+        pw_max                      : in std_logic_vector(31 downto 0);
+        range_offset_i              : in std_logic_vector(19 downto 0);
+--        pri_value                   : in pri_data;
+--        pw_value                    : in pw_data; 
+--        switch_dwell_cnt            : in switch_dwell_cnt_16x7; 
+        stagger_level		        : in std_logic_vector(7 downto 0) ;      -- the pri and pw count.
+        pri_offset                  : in std_logic_vector(7 downto 0);
+        pw_offset                   : in std_logic_vector(7 downto 0);
+        PW_increase_reg             : in std_logic_vector(31 downto 0);
+        target_DUC_fir_offset       : in std_logic_vector(7 downto 0);
+        sync_cnt                    : in std_logic_vector(3 downto 0);
+        jamm_cnt                    : in std_logic_vector(23 downto 0);
+        look_through_cnt            : in std_logic_vector(3 downto 0);
+        pw_verify_cnt               : in std_logic_vector(7 downto 0);
+        sync_err_cnt                : in std_logic_vector(7 downto 0);
+        sub                         : in std_logic_vector(7 downto 0);
+        retrigger_cnt               : in std_logic_vector(31 downto 0);
+        break_cnt                   : in std_logic_vector(15 downto 0);
+        temp_1                      : in std_logic_vector(31 downto 0);
+        debug_sync_cnt              : out std_logic_vector(31 downto 0);
+        debug_jamm_cnt              : out std_logic_vector(31 downto 0);
+        debug_look_cnt              : out std_logic_vector(31 downto 0);
+        sync_fail_cnt               : out std_logic_vector(31 downto 0);
+        pw_o                        : out std_logic_vector(31 downto 0);
+        pri_o                       : out std_logic_vector(31 downto 0);
+        range_offset_o              : out std_logic_vector(19 downto 0);
+        index_o                     : out std_logic_vector(7 downto 0);
+        sync_done                   : out std_logic;
+        Jamming_fail                : out std_logic;
+        local_jam_en                : out std_logic;
+        LO_en                       : out std_logic;
+        gen_pusle_o                 : out std_logic;
+        target_sim_trig             : out std_logic;
+        pri_match_o                 : out std_logic;
+        state_cnt_o                 : out std_logic_vector(2 downto 0);
+        tx_lo_en_trig               : out std_logic;
+        noise_target_pulse          : out std_logic;
+        coverpulse_en               : out std_logic
+     );
+end jamming_seq;
+
+architecture Behavioral of jamming_seq is
+
+COMPONENT pgen_vhdl
+  port (  
+			din  : in std_logic;
+			clk  : in std_logic;
+			dout  : out std_logic);
+END COMPONENT;
+
+component Cover_Pulse
+  port (	  clk	                   :  in std_logic ;  			
+			  reset   			       :  in std_logic ;
+			  cover_pulse_en   		   :  in std_logic ;
+              pri_in1                  :  in std_logic_vector(31 downto 0);    
+              pw_in1                   :  in std_logic_vector(31 downto 0);  
+              pw_in2                   :  in std_logic_vector(31 downto 0);  
+              PW_increase_reg          :  in std_logic_vector(31 downto 0);   
+              valid_in                 :  in std_logic ;            
+              data_out_en              :  out std_logic );			
+end component;
+
+component TX_Cover_Pulse
+  port (	  clk	                   :  in std_logic ;  			
+			  reset   			       :  in std_logic ;
+			  cover_pulse_en   		   :  in std_logic ;
+			  pulse_noise   		   :  in std_logic ;
+              PW_increase_reg          :  in std_logic_vector(31 downto 0);    
+              pri_in1                  :  in std_logic_vector(31 downto 0);    
+              pw_in1                   :  in std_logic_vector(31 downto 0);    
+              pw_in2                   :  in std_logic_vector(31 downto 0);    
+              valid_in                 :  in std_logic ;            
+              target_pulse             :  out std_logic;
+              data_out_en              :  out std_logic );			
+end component;
+
+type pri_data           is array (0 to 15) of std_logic_vector(31 downto 0);
+type pw_data            is array (0 to 15) of std_logic_vector(31 downto 0);
+type temp               is array (0 to 15) of std_logic_vector(7 downto 0);
+signal pri_value           :  pri_data;
+signal pw_value            :  pw_data; 
+signal switch_dwell_cnt    :  temp; 
+
+TYPE STATE IS(idle,sync,retrigger,jamm,blank,lookthrough);
+signal c_s : state := idle;
+
+constant pw_verify_const            : std_logic_vector(7 downto 0) := x"04";    -- the 15 cont to make shure that the freq latch generated is not glitch.
+
+signal freq_match_pul_r             : std_logic:= '0';
+signal freq_match_pul_f             : std_logic:= '0';
+signal freq_match_pul_f1            : std_logic:= '0';
+signal freq_match_pul_f2            : std_logic:= '0';
+signal freq_match_pul_f3            : std_logic:= '0';
+signal lo_en_trig_pul_f             : std_logic:= '0';
+signal lo_en_trig_pul_r             : std_logic:= '0';
+signal tx_lo_en_trig_pul_f          : std_logic:= '0';
+signal tx_lo_en_trig_pul_r          : std_logic:= '0';
+signal jammig_trig                  : std_logic:= '0';
+signal pri_cnt_en                   : std_logic:= '0';
+signal pri_cnt_en1                  : std_logic:= '0';
+signal pri_cnt_en2                  : std_logic:= '0';
+signal pri_cnt_clr                  : std_logic:= '0';
+signal pri_cnt                      : std_logic_vector(31 downto 0):= (others =>'0');
+signal pri_cnt1                     : std_logic_vector(31 downto 0):= (others =>'0');
+signal invalid_pw                   : std_logic:= '0';
+signal invalid_pw_trig              : std_logic:= '0';
+signal toggle                       : std_logic:= '0';
+signal toggle1                      : std_logic:= '0';
+signal gen_pulse                    : std_logic:= '0';
+signal gen_pulse_r                  : std_logic:= '0';
+signal gen_pulse_delay              : std_logic_vector(15 downto 0):= (others =>'0');
+signal lo_en_trig                   : std_logic:= '0';
+
+signal cnt_sync                     : std_logic_vector(3 downto 0)  := (others =>'0');
+signal sync_cnt_buf                 : std_logic_vector(3 downto 0)  := (others =>'0');
+signal sync_fail_cnt1               : std_logic_vector(7 downto 0)  := (others =>'0');
+signal cnt_jam                      : std_logic_vector(23 downto 0) := (others =>'0');
+signal cnt_look_through             : std_logic_vector(3 downto 0)  := (others =>'0');
+signal cnt_sync_err                 : std_logic_vector(7 downto 0) := (others =>'0');
+
+signal present_range1               : std_logic_vector(19 downto 0) := (others =>'0');
+signal adc_data_to_store            : std_logic_vector(159 downto 0):= (others =>'0');
+signal pri_check_cnt                : std_logic_vector(31 downto 0) := (others =>'0');
+signal pri_check_cnt1               : std_logic_vector(31 downto 0) := (others =>'0');
+signal pri_check_cnt2               : std_logic_vector(31 downto 0) := (others =>'0');
+signal pw_check_cnt                 : std_logic_vector(31 downto 0) := (others =>'0');
+signal calc_pw                      : std_logic_vector(31 downto 0) := (others =>'0');  
+signal calc_pri                     : std_logic_vector(31 downto 0) := (others =>'0');  
+signal calc_pri_off                 : std_logic_vector(31 downto 0) := (others =>'0');  
+signal pw_match                     : std_logic := '0';  
+signal pri_match                    : std_logic := '0';  
+signal sync_en                      : std_logic := '0';  
+signal pulse_sync_en                : std_logic := '0';  
+signal looktrough_rst               : std_logic := '0';  
+signal tx_lo_en_trig1               : std_logic := '0';  
+signal tx_pri_cnt                   : std_logic_vector(31 downto 0) := (others =>'0');
+signal lookthrough_max_count        : std_logic_vector(27 downto 0) := (others =>'0');
+constant max_lookthrough_allowed    :std_logic_vector(27 downto 0)  := x"05B96E0";
+signal state_cnt                    : std_logic_vector(2 downto 0)  := (others =>'0');
+signal cnt_aa                       : std_logic_vector(31 downto 0) := (others =>'0');
+signal cnt_bb                       : std_logic_vector(15 downto 0) := (others =>'0');
+signal init_cntr                    : std_logic_vector(7 downto 0)  := (others =>'0');
+signal init_cntr2                   : std_logic_vector(7 downto 0)  := (others =>'0');
+signal init_cntr3                   : std_logic_vector(7 downto 0)  := (others =>'0');
+signal tx_pri                       : std_logic_vector(31 downto 0) := (others =>'0');
+signal pri1                         : std_logic_vector(31 downto 0) := (others =>'0');
+signal pri2                         : std_logic_vector(31 downto 0) := (others =>'0');
+signal e_pri                        : std_logic_vector(31 downto 0) := (others =>'0');
+signal pw1                          : std_logic_vector(31 downto 0) := (others =>'0');
+signal pw1_latch                    : std_logic_vector(31 downto 0) := (others =>'0');  -- latched pw1 to avoid stale value in DUC counter
+signal pw2                          : std_logic_vector(31 downto 0) := (others =>'0');
+signal gen_pw1                      : std_logic_vector(31 downto 0) := (others =>'0');
+signal local_jam_en_buf             : std_logic := '0';
+signal jamm_eligible_en             : std_logic := '0';
+signal target_sim_trig1             : std_logic := '0';
+signal target_sim_trig1_r           : std_logic := '0';
+signal debug_sync_cnt1              : std_logic_vector(31 downto 0) := (others =>'0');
+signal debug_jamm_cnt1              : std_logic_vector(31 downto 0) := (others =>'0');
+signal debug_look_cnt1              : std_logic_vector(31 downto 0) := (others =>'0');
+signal temp_pri                     : std_logic_vector(31 downto 0) := (others =>'0');
+signal temp_pw                      : std_logic_vector(31 downto 0) := (others =>'0');
+
+signal switch_cnt                   : std_logic_vector(7 downto 0) := (others =>'0');
+signal swithc_dwell_cnt             : std_logic_vector(7 downto 0) := (others =>'0');
+signal check_pri_cnt                : std_logic_vector(7 downto 0) := (others =>'0');
+signal check_pri_cnt_buf            : std_logic_vector(7 downto 0) := (others =>'0');
+signal check_pri_en                 : std_logic := '0';
+signal check_match                  : std_logic := '0';
+signal resync_en_trig               : std_logic := '0';
+signal dwell_en_trig                : std_logic := '0';
+signal freq_occur                   : std_logic := '0';
+signal dwell_trig_cnt               : std_logic_vector(1 downto 0) := (others =>'0');
+
+--type array16x20 is array (0 to 15) of std_logic_vector(19 downto 0);
+signal range_offset                 : pw_data := (others => (Others => '0'));
+
+signal range_offset1                : std_logic_vector(31 downto 0) := (others =>'0');
+signal range_offset_en              : std_logic := '0';
+signal dwell_cnt                    : std_logic_vector(7 downto 0) := (others =>'0');
+signal lock                         : std_logic := '0';
+signal pri_lock                     : std_logic := '0';
+signal tx_valid_in                  : std_logic := '0';
+signal trig_switch1                 : std_logic := '0';
+signal trig_switch2                 : std_logic := '0';
+signal trig_switch3                 : std_logic := '0';
+signal DUC_fir_offset               : std_logic_vector(7 downto 0) := (others =>'0');
+
+signal clr_flag                     : std_logic := '0';
+signal clr_flag_r                   : std_logic:= '0';
+signal ddc_lock_status_f            : std_logic:= '0';
+signal init_cntr_buf                : std_logic_vector(7 downto 0)  := (others =>'0');
+signal init_cntr_buf1               : std_logic_vector(7 downto 0)  := (others =>'0');
+signal init_cntr_buf2               : std_logic_vector(7 downto 0)  := (others =>'0');
+signal check_match1                 : std_logic_vector(6 downto 0) := (others =>'0');
+signal pri_lock1                    : std_logic_vector(5 downto 0) := (others =>'0');
+signal refresh_pul_cnt              : std_logic_vector(15 downto 0) := (others =>'0');
+signal pri_diff                     : std_logic_vector(31 downto 0) := (others =>'0');
+
+signal sta                          : std_logic_vector(2 downto 0) :=(others =>'0');
+signal tx_init_rst                  : std_logic:= '0';
+signal init_cnt_trig                : std_logic:= '0';
+
+attribute keep : string;
+attribute keep of  calc_pw: signal is "true";  
+attribute keep of  calc_pri: signal is "true";  
+attribute keep of  lo_en_trig: signal is "true";  
+attribute keep of  gen_pulse: signal is "true";  
+attribute keep of  c_s: signal is "true";  
+attribute keep of  difm_freq_match: signal is "true";  
+attribute keep of  difm_freq_match1: signal is "true";  
+attribute keep of  local_jam_en: signal is "true";  
+attribute keep of  pw_match: signal is "true";  
+attribute keep of  pri_match: signal is "true";  
+attribute keep of  pri_check_cnt1: signal is "true";  
+attribute keep of  pw_check_cnt: signal is "true";  
+attribute keep of  pri_check_cnt: signal is "true";  
+attribute keep of  pri1: signal is "true";  
+attribute keep of  pw1: signal is "true";  
+attribute keep of  toggle: signal is "true";  
+attribute keep of  jamm_en: signal is "true";  
+attribute keep of  pri_cnt_en: signal is "true";  
+attribute keep of  sync_done: signal is "true";  
+attribute keep of  state_cnt: signal is "true";  
+attribute keep of  sync_en: signal is "true";  
+attribute keep of  cnt_jam: signal is "true";  
+attribute keep of  tx_lo_en_trig: signal is "true";  
+attribute keep of  target_sim_trig: signal is "true";  
+attribute keep of  tx_pri_cnt: signal is "true";  
+attribute keep of  present_range1: signal is "true";  
+attribute keep of  invalid_pw_trig: signal is "true";  
+attribute keep of  invalid_pw: signal is "true";  
+attribute keep of  pulse_sync_en: signal is "true";  
+attribute keep of  pri_cnt_clr  : signal is "true";  
+attribute keep of  tx_cover_en  : signal is "true";  
+attribute keep of  freq_match_pul_f  : signal is "true";  
+attribute keep of  init_cntr  : signal is "true";  
+attribute keep of  init_cntr2  : signal is "true";  
+attribute keep of  pri_cnt  : signal is "true";  
+attribute keep of  noise_target_pulse  : signal is "true";  
+attribute keep of  trig_switch1  : signal is "true";  
+attribute keep of  trig_switch2  : signal is "true";  
+attribute keep of  trig_switch3  : signal is "true";  
+attribute keep of  jammig_trig   : signal is "true"; 
+ 
+attribute keep of  clr_flag            : signal is "true";  
+attribute keep of  clr_flag_r          : signal is "true";  
+attribute keep of  ddc_lock_status_f   : signal is "true";  
+attribute keep of  init_cntr_buf       : signal is "true";  
+attribute keep of  check_match1        : signal is "true";  
+attribute keep of  refresh_pul_cnt     : signal is "true";  
+attribute keep of  pri_diff            : signal is "true";  
+attribute keep of  check_pri_en            : signal is "true";  
+attribute keep of  check_pri_cnt           : signal is "true";  
+attribute keep of  check_pri_cnt_buf       : signal is "true";  
+attribute keep of  cnt_look_through       : signal is "true";  
+attribute keep of  cnt_sync_err  : signal is "true";  
+
+begin
+
+switch_dwell_cnt(0)     <= x"0B";
+switch_dwell_cnt(1)     <= x"0B";
+switch_dwell_cnt(2)     <= x"0B";
+switch_dwell_cnt(3)     <= x"0B";
+switch_dwell_cnt(4)     <= x"0B";
+switch_dwell_cnt(5)     <= x"0B";
+switch_dwell_cnt(6)     <= x"0B";
+switch_dwell_cnt(7)     <= x"0B";
+switch_dwell_cnt(8)     <= x"0B";
+switch_dwell_cnt(9)     <= x"0B";
+switch_dwell_cnt(10)    <= x"0B";
+switch_dwell_cnt(11)    <= x"0B";
+switch_dwell_cnt(12)    <= x"0B";
+switch_dwell_cnt(13)    <= x"0B";
+switch_dwell_cnt(14)    <= x"3c";
+switch_dwell_cnt(15)    <= x"3c";
+
+pw_value(0)     <= x"0000003C";
+pw_value(1)     <= x"000000B4";
+pw_value(2)     <= x"0000012C";
+pw_value(3)     <= x"000001A4";
+pw_value(4)     <= x"0000021C";
+pw_value(5)     <= x"000000B4";
+pw_value(6)     <= x"000000B4";
+pw_value(7)     <= x"000000B4";
+pw_value(8)     <= x"000000B4";
+pw_value(9)     <= x"000000B4";
+pw_value(10)    <= x"000000B4";
+pw_value(11)    <= x"000000B4";
+pw_value(12)    <= x"000000B4";
+pw_value(13)    <= x"000000B4";
+pw_value(14)    <= x"000000B4";
+pw_value(15)    <= x"000000B4";
+
+pri_value(0)    <= x"00001770";
+pri_value(1)    <= x"00001E78";
+pri_value(2)    <= x"00002328";
+pri_value(3)    <= x"000027D8";
+pri_value(4)    <= x"00002C88";
+pri_value(5)    <= x"000004EC";
+pri_value(6)    <= x"00000564";
+pri_value(7)    <= x"000005DC";
+pri_value(8)    <= x"00000654";
+pri_value(9)    <= x"000006CC";
+pri_value(10)   <= x"00000744";
+pri_value(11)   <= x"000007BC";
+pri_value(12)   <= x"00000834";
+pri_value(13)   <= x"000008AC";
+pri_value(14)   <= x"00000000";
+pri_value(15)   <= x"00000000";
+
+I1_pgen_vhdl : pgen_vhdl
+PORT MAP (
+            din  => difm_freq_match,
+            clk  => clk,
+            dout => freq_match_pul_r );
+    
+I2_pgen_vhdl : pgen_vhdl
+PORT MAP (
+            din  => not difm_freq_match,
+            clk  => clk,
+            dout => freq_match_pul_f );
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(jamm_en = '1' and sync_en = '0' and pri_cnt_clr = '0') then
+    if(pw_check_cnt  >= pw_verify_cnt  and (pw_check_cnt < pw_verify_cnt + pw_verify_const) and difm_freq_match1 = '1') then     
+        pw_check_cnt        <= pw_check_cnt + '1';
+        invalid_pw_trig     <= '0';
+    elsif(pw_check_cnt  >= pw_verify_cnt  and (pw_check_cnt < pw_verify_cnt + pw_verify_const) and difm_freq_match1 = '0') then
+        pw_check_cnt        <= (others =>'0');  
+        invalid_pw_trig     <= '1';  
+    elsif(difm_freq_match = '1' and invalid_pw = '0') then
+        pw_check_cnt        <= pw_check_cnt + '1';
+        invalid_pw_trig     <= '0'; 
+    elsif(difm_freq_match = '0') then
+        invalid_pw_trig     <= '0';    
+    end if;
+    
+    if(freq_match_pul_f     = '1' and invalid_pw = '1') then
+        invalid_pw          <= '0';
+        calc_pw             <= calc_pw; 
+        pw_check_cnt        <= (others =>'0'); 
+    elsif(freq_match_pul_f  = '1' and invalid_pw = '0') then
+        invalid_pw          <= '0';
+        calc_pw             <= pw_check_cnt - '1';
+        pw_check_cnt        <= (others =>'0');         
+    elsif(invalid_pw_trig   = '1') then
+        invalid_pw          <= '1';
+    else         
+        invalid_pw          <= invalid_pw;
+    end if;
+    
+    pri_check_cnt       <= pri_check_cnt +'1';
+    
+    if(freq_match_pul_r = '1') then
+        calc_pri_off     <= pri_check_cnt - pri_check_cnt1;
+    end if;
+    
+    if(freq_match_pul_f = '1') then
+        pri_check_cnt1  <= pri_check_cnt;
+    end if;
+    
+    calc_pri        <= calc_pw + calc_pri_off;
+         
+else
+    invalid_pw_trig <= '0';
+    invalid_pw      <= '0';
+    pw_check_cnt    <= (others =>'0');
+    calc_pw         <= (others =>'0');
+    calc_pri        <= (others =>'0');
+end if;
+end if;
+end process;
+
+
+---- PW and PRI Calucation for the log detector. -- Helpful while simulation
+--process(clk)
+--begin
+--if(rising_EdgE(clk)) then
+--if(jamm_en = '1') then
+--    if(difm_freq_match = '1') then
+--        pw_check_cnt        <= pw_check_cnt + '1';  
+--    elsif(freq_match_pul_f = '1') then
+--        calc_pw             <= pw_check_cnt;
+--        pw_check_cnt        <= (others =>'0'); 
+--    end if;        
+    
+--    pri_check_cnt       <= pri_check_cnt +'1';
+    
+--    if(freq_match_pul_r = '1') then
+--    calc_pri_off     <= pri_check_cnt - pri_check_cnt1;
+--    end if;
+    
+--    if(freq_match_pul_f = '1') then
+--    pri_check_cnt1  <= pri_check_cnt;
+--    end if;
+    
+--    calc_pri        <= calc_pw + calc_pri_off;
+    
+--else
+--    pw_check_cnt        <= (others =>'0');
+--    pri_check_cnt       <= (others =>'0');       
+--    pri_check_cnt1      <= (others =>'0');       
+--    calc_pri            <= (others =>'0');       
+--    calc_pw             <= (others =>'0');       
+--end if;
+--end if;
+--end process;
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '0') then
+    if(pulse_131072_i = '1' and range_offset_en = '0') then 
+        range_offset(0)   <= pri_value(0)  - range_offset_i;
+        range_offset(1)   <= pri_value(1)  - range_offset_i;
+        range_offset(2)   <= pri_value(2)  - range_offset_i;
+        range_offset(3)   <= pri_value(3)  - range_offset_i;
+        range_offset(4)   <= pri_value(4)  - range_offset_i;
+        range_offset(5)   <= pri_value(5)  - range_offset_i;
+        range_offset(6)   <= pri_value(6)  - range_offset_i;
+        range_offset(7)   <= pri_value(7)  - range_offset_i;
+        range_offset(8)   <= pri_value(8)  - range_offset_i;
+        range_offset(9)   <= pri_value(9)  - range_offset_i;
+        range_offset(10)  <= pri_value(10) - range_offset_i;
+        range_offset(11)  <= pri_value(11) - range_offset_i;
+        range_offset(12)  <= pri_value(12) - range_offset_i;
+        range_offset(13)  <= pri_value(13) - range_offset_i;
+        range_offset(14)  <= pri_value(14) - range_offset_i;
+        range_offset(15)  <= pri_value(15) - range_offset_i;
+        range_offset_en   <= '1';
+    else
+        range_offset(0)   <= range_offset(0); 
+        range_offset(1)   <= range_offset(1); 
+        range_offset(2)   <= range_offset(2); 
+        range_offset(3)   <= range_offset(3); 
+        range_offset(4)   <= range_offset(4); 
+        range_offset(5)   <= range_offset(5); 
+        range_offset(6)   <= range_offset(6); 
+        range_offset(7)   <= range_offset(7); 
+        range_offset(8)   <= range_offset(8); 
+        range_offset(9)   <= range_offset(9); 
+        range_offset(10)  <= range_offset(10);
+        range_offset(11)  <= range_offset(11);
+        range_offset(12)  <= range_offset(12);
+        range_offset(13)  <= range_offset(13);
+        range_offset(14)  <= range_offset(14);
+        range_offset(15)  <= range_offset(15);
+        range_offset_en   <= range_offset_en;            
+    end if;
+else
+    range_offset(0)   <= (others =>'0');
+    range_offset(1)   <= (others =>'0');
+    range_offset(2)   <= (others =>'0');
+    range_offset(3)   <= (others =>'0');
+    range_offset(4)   <= (others =>'0');
+    range_offset(5)   <= (others =>'0');
+    range_offset(6)   <= (others =>'0');
+    range_offset(7)   <= (others =>'0');
+    range_offset(8)   <= (others =>'0');
+    range_offset(9)   <= (others =>'0');
+    range_offset(10)  <= (others =>'0');
+    range_offset(11)  <= (others =>'0');
+    range_offset(12)  <= (others =>'0');
+    range_offset(13)  <= (others =>'0');
+    range_offset(14)  <= (others =>'0');
+    range_offset(15)  <= (others =>'0');
+    range_offset_en   <= '0';   
+end if;
+end if;
+end process;
+
+i1_fdce : fdce
+port map( d     => '1',
+          c     => clk,
+          ce    => pri_match,
+          clr   => rst or jammer_lookthrough, --sync_en or rst,
+          Q     => pri_lock
+         ); 
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+   pw_match         <= '0';
+   pri_match        <= '0';
+   pw1              <= (others =>'0');
+   pri1             <= (others =>'0');
+   pw2              <= (others =>'0');
+   pri2             <= (others =>'0');
+else
+freq_match_pul_f3   <= freq_match_pul_r;
+freq_match_pul_f2   <= freq_match_pul_f3;
+freq_match_pul_f1   <= freq_match_pul_f2;
+check_match1        <= check_match1(5 downto 0) & check_match;
+pri_lock1           <= pri_lock1(4 downto 0) & (pri_lock);
+
+    if(freq_match_pul_f1 = '1') then 
+        check_pri_en    <= '1';
+        check_pri_cnt   <= (others =>'0');
+    elsif(sync_en = '1' or jammer_lookthrough = '1') then
+	    check_pri_cnt<= (others =>'0');
+	    check_match <= '0';
+	 	pw_match    <= '0';
+	 	pri_match   <= '0';  
+        temp_pri        <= (others =>'0');
+	elsif(local_jam_en_buf = '1') then	 
+        pw_match    <= '0';
+	 	pri_match   <= '0';  
+        temp_pri        <= (others =>'0');	  
+    elsif((check_pri_cnt = stagger_level) or check_match = '1') then
+        check_pri_en    <= '0';
+        check_match     <= '0';
+        check_pri_cnt   <= (others =>'0');
+        if(check_match = '1') then
+            check_pri_cnt_buf   <= check_pri_cnt;
+        end if;
+    elsif(check_pri_en = '1' and sync_en = '0') then
+        check_pri_cnt    <= check_pri_cnt + '1';
+        if((calc_pw > (pw_value(to_integer(unsigned(check_pri_cnt))) - pw_offset)) and (calc_pw < (pw_value(to_integer(unsigned(check_pri_cnt))) + pw_offset))) then
+	 		pw_match                    <= '1';
+            if((calc_pri > (pri_value(to_integer(unsigned(check_pri_cnt))) - pri_offset)) and (calc_pri < (pri_value(to_integer(unsigned(check_pri_cnt))) + pri_offset))) then
+                pri_match               <= '1';
+                check_match             <= '1';
+            end if;
+		end if;    
+		temp_pri <= pri_value(to_integer(unsigned(check_pri_cnt)));
+    end if;
+    
+--    if(sync_en = '0' and check_pri_en = '1') then           
+--        if((calc_pw > (pw_value(to_integer(unsigned(check_pri_cnt))) - pw_offset)) and (calc_pw < (pw_value(to_integer(unsigned(check_pri_cnt))) + pw_offset))) then
+--	 		pw_match                    <= '1';
+--            if((calc_pri > (pri_value(to_integer(unsigned(check_pri_cnt))) - pri_offset)) and (calc_pri < (pri_value(to_integer(unsigned(check_pri_cnt))) + pri_offset))) then
+--                pri_match               <= '1';
+--                check_match             <= '1';
+--            end if;
+--		end if;
+----		check_pri_cnt    <= check_pri_cnt + '1'; 
+--	elsif(sync_en = '1') then
+--	    check_pri_cnt<= (others =>'0');
+--	    check_match <= '0';
+--	 	pw_match    <= '0';
+--	 	pri_match   <= '0';   
+--    elsif(local_jam_en_buf = '1') then	 
+--        pw_match    <= '0';
+--	 	pri_match   <= '0'; 		
+--    end if;
+
+if(switch_dwell_en = '1') then
+    if(init_cntr2  = stagger_level) then
+        tx_init_rst <= init_cnt_trig;
+    else
+        tx_init_rst <= '0';
+    end if;
+    if(init_cntr2  = stagger_level) then
+        init_cntr3 <= (others =>'0');
+    else
+        init_cntr3 <= init_cntr2;
+    end if; 
+    if(dwell_cnt = swithc_dwell_cnt) then 
+        tx_pri  <= pri2;
+    else    
+        tx_pri  <= pri1;
+    end if;    
+    tx_pri  <= pri1;
+else
+    if(init_cntr2  = stagger_level) then
+        init_cntr3 <= (others =>'0');
+    else
+        init_cntr3 <= init_cntr2;
+    end if;   
+--    tx_pri  <= pri2; 
+    tx_pri  <= pri1;	
+end if;
+
+if(pri_lock1(2) = '1') then
+   pw1                  <= pw_value (to_integer(unsigned(init_cntr2)-1));
+   pri1                 <= pri_value(to_integer(unsigned(init_cntr2)-1));
+   swithc_dwell_cnt     <= switch_dwell_cnt(to_integer(unsigned(init_cntr2)-1));
+   range_offset1        <= range_offset(to_integer(unsigned(init_cntr2)-1));  
+--   pri2                 <= pri_value(to_integer(unsigned(init_cntr3)));
+   pw2                  <= pw_value(to_integer(unsigned(init_cntr3)));
+else
+   pw1                  <= (others =>'0');
+   pri1                 <= (others =>'0'); 
+   pri2                 <= (others =>'0'); 
+   swithc_dwell_cnt     <= (others =>'0');
+   range_offset1        <= (others =>'0'); 
+end if;   
+
+pri_diff        <=  pri2-pri1;
+
+range_offset_o  <= range_offset1(19 downto 0);
+
+init_cntr2    <= init_cntr;
+
+end if;
+end if;
+end process;
+index_o     <= init_cntr2;
+pw_o        <= pw1;
+pri_o       <= pri1;
+pri_match_o <= pri_match;
+
+I9_pgen_vhdl : pgen_vhdl
+PORT MAP (
+            din  => clr_flag,
+            clk  => clk,
+            dout => clr_flag_r );
+    
+I_pgen_vhdl : pgen_vhdl
+PORT MAP (
+            din  => target_sim_trig1,
+            clk  => clk,
+            dout => target_sim_trig1_r );
+    
+i_fdce : fdce 
+port map(d => '1',
+         c => clk,
+         ce => pri_match, 
+         clr => rst or  pri_cnt_clr or clr_flag, 
+         q => pri_cnt_en1
+         );    
+
+process(clk)        --- local generated pulse to track the radar pulse.
+begin
+if(rising_Edge(clk)) then
+pri_cnt_en2 <= pri_cnt_en1;
+pri_cnt_en  <= pri_cnt_en2;
+    if(pri_cnt_en = '1' and sync_en = '0') then
+        if((pri_cnt = pri1-sub) and (toggle = '0')) then   -- toglle signal is to correct the 1st pulse only.
+            pri_cnt     <= (others =>'0');
+            gen_pulse   <= '0';
+            toggle      <= '1';
+            sta         <= "001";
+        elsif (difm_freq_match = '1' and (pulse_sync_en = '1' or resync_en_trig = '1')  and (toggle = '1')) then -- to correct the drift in the generated pulse during the jammming time.
+            gen_pulse   <= '1';
+            pri_cnt     <= pw1 + 1; 
+--            pri_cnt     <= pri_cnt + '1'; --pw1 + 1 - x"30"; 
+            sta         <= "010";  
+        elsif((pri_cnt = (pri1- '1')) and (toggle = '1')) then
+            pri_cnt     <= (others =>'0');
+            gen_pulse   <= '0';            
+            toggle      <= toggle;
+            sta         <= "011";
+        elsif(pri_cnt <= (pw1 - '1') and (toggle = '1')) then
+            pri_cnt     <= pri_cnt + '1';
+            gen_pulse   <= '1';
+            toggle      <= toggle;
+            sta         <= "100";
+        else
+            pri_cnt     <= pri_cnt + '1';
+            gen_pulse   <= '0';   
+            toggle      <= toggle; 
+            sta         <= "101";
+        end if; 
+    else
+        pri_cnt         <= (others =>'0');
+        gen_pulse       <= '0';
+        toggle          <= '0';
+            sta         <= "000";
+    end if;            
+end if;
+end process;
+
+i_Cover_Pulse : Cover_Pulse     -- To generate the coverPulse for the RX.
+port map(
+        clk	                 => clk,
+		reset   			 => rst or clr_flag_r or jammer_lookthrough,
+		cover_pulse_en   	 => pri_cnt_en,
+        pri_in1              => pri1,   
+        pw_in1               => pw1, 
+        pw_in2               => pw2,
+        PW_increase_reg      => temp_1, --(others =>'0'), --e_pri(19 downto 0),  -- need to be usd for switch and dwell  
+        valid_in             => gen_pulse,
+        data_out_en          => lo_en_trig
+        );
+         
+process(clk)        ---- DUC filter delay compation logic.
+begin
+if(rising_Edge(clk)) then
+if(pri_cnt_en = '1' and sync_en = '0') then
+    if((pri_cnt1 >= pri1-target_DUC_fir_offset -sub) and (toggle1 = '0')) then
+        pri_cnt1             <= (others =>'0');
+        target_sim_trig1     <= '0';
+        toggle1              <= '1';
+        pw1_latch            <= pw1;          -- FIX: latch pw1 at counter reset to avoid stale value
+    elsif (difm_freq_match = '1' and (pulse_sync_en = '1' or resync_en_trig = '1')  and (toggle1 = '1')) then   -- to correct the drift in the generated pulse during the jammming time.
+--            target_sim_trig1 <= '1';
+            pri_cnt1         <= pw1 + 1 + target_DUC_fir_offset; 
+--            pri_cnt1         <= pw1 + 1 + target_DUC_fir_offset  + x"30"; 
+            pw1_latch        <= pw1;          -- FIX: also update latch on resync so counter uses fresh pw1
+    elsif((pri_cnt1 >= (pri1- '1')) and (toggle1 = '1')) then
+        pri_cnt1             <= (others =>'0');
+        target_sim_trig1     <= '0';            
+        toggle1              <= toggle1;
+    elsif(pri_cnt1 <= (pw1_latch - '1') and (toggle1 = '1')) then   -- FIX: use pw1_latch instead of pw1
+        pri_cnt1             <= pri_cnt1 + '1';
+        target_sim_trig1     <= '1';
+        toggle1              <= toggle1;
+    else
+        pri_cnt1             <= pri_cnt1 + '1';
+        target_sim_trig1     <= '0';   
+        toggle1              <= toggle1; 
+    end if; 
+else
+    pri_cnt1                 <= (others =>'0');
+    target_sim_trig1         <= '0';
+    toggle1                  <= '0';
+    pw1_latch                <= (others =>'0');   -- FIX: clear latch on reset
+end if;            
+end if;
+end process;
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+if(rst = '1') then
+    jammig_trig     <= '0';
+    tx_pri_cnt      <= (others =>'0');
+else
+    if(RGPO = '1') then   
+        jammig_trig     <= tx_lo_en_trig_pul_f; 
+        tx_pri_cnt      <= tx_pri +  (x"000" & present_range);
+    elsif(rgpi  = '1' and pri_lock1(5) = '1') then
+        tx_pri_cnt      <= (x"000" & present_range);
+        jammig_trig     <= tx_lo_en_trig_pul_f;
+    else
+        tx_pri_cnt      <= tx_pri;  
+        jammig_trig     <= lo_en_trig_pul_f;      
+    end if;
+    
+    tx_valid_in     <= target_sim_trig1;
+end if;
+end if;
+end process;
+       
+I_TX_Cover_Pulse : TX_Cover_Pulse
+port map (
+          clk                => clk,
+          reset              => rst or RANRAP_en or clr_flag_r or jammer_lookthrough or tx_init_rst,
+          cover_pulse_en     => pri_cnt_en and (tx_cover_en or pulse_noise),
+          pri_in1            => tx_pri_cnt, 
+          pulse_noise        => pulse_noise,
+          PW_increase_reg    => PW_increase_reg,
+          pw_in1             => pw1,   
+          pw_in2             => pw2,   
+          valid_in           => gen_pulse, --tx_valid_in ,--and (not(pulse_sync_en)),
+          target_pulse       => noise_target_pulse,
+          data_out_en        => tx_lo_en_trig1
+         );
+         
+target_sim_trig <= target_sim_trig1;
+tx_lo_en_trig   <= tx_lo_en_trig1;
+coverpulse_en   <= lo_en_trig;  
+gen_pusle_o     <= gen_pulse;
+local_jam_en    <= local_jam_en_buf;
+
+I3_pgen_vhdl : pgen_vhdl
+  PORT MAP (
+    din  => (lo_en_trig),
+    clk  => clk,
+    dout => lo_en_trig_pul_r);
+         
+I4_pgen_vhdl : pgen_vhdl
+  PORT MAP (
+    din  => not(lo_en_trig),
+    clk  => clk,
+    dout => lo_en_trig_pul_f);
+         
+I5_pgen_vhdl : pgen_vhdl
+  PORT MAP (
+    din  => tx_lo_en_trig1,
+    clk  => clk,
+    dout => tx_lo_en_trig_pul_r);
+         
+I6_pgen_vhdl : pgen_vhdl
+  PORT MAP (
+    din  => not(tx_lo_en_trig1),
+    clk  => clk,
+    dout => tx_lo_en_trig_pul_f);
+         
+I7_pgen_vhdl : pgen_vhdl
+  PORT MAP (
+    din  => gen_pulse,
+    clk  => clk,
+    dout => gen_pulse_r);
+           
+I8_pgen_vhdl : pgen_vhdl
+PORT MAP (
+            din  => not ddc_lock_status,
+            clk  => clk,
+            dout => ddc_lock_status_f);
+
+process(clk)
+begin
+if(rising_edge(clk)) then
+gen_pulse_delay <= gen_pulse_delay(14 downto 0) & gen_pulse_r; 
+init_cntr_buf   <= init_cntr;
+init_cntr_buf1  <= init_cntr_buf;
+init_cntr_buf2  <= init_cntr_buf1;
+
+if(rst = '1') then
+    c_s                         <= idle;
+    cnt_sync                    <= (others =>'0');
+    cnt_jam                     <= (others =>'0');
+    cnt_look_through            <= (others =>'0');
+    cnt_sync_err                <= (others =>'0');
+    sync_fail_cnt1              <= (others =>'0');
+    lookthrough_max_count       <= (others =>'0');
+    dwell_cnt                   <= (others =>'0');
+    cnt_aa                      <= (others =>'0');
+    cnt_bb                      <= (others =>'0');
+    debug_sync_cnt1             <= (others =>'0');
+    debug_jamm_cnt1             <= (others =>'0');
+    debug_look_cnt1             <= (others =>'0');
+    e_pri                       <= (others =>'0');
+    dwell_trig_cnt              <= (others =>'0');
+    lo_en                       <= '0';
+    freq_occur                  <= '0';
+    sync_done                   <= '0';
+    resync_en_trig              <= '0';          
+    dwell_en_trig               <= '0';          
+    local_jam_en_buf            <= '0';  
+    jamm_eligible_en            <= '0';  
+    sync_en                     <= '0';  
+    pulse_sync_en               <= '0';
+    pri_cnt_clr                 <= '0';
+    init_cnt_trig               <= '0';
+    state_cnt                   <= "000";   
+     
+else
+    case c_s is
+            when idle =>
+                        cnt_sync                        <= (others =>'0');
+                        cnt_jam                         <= (others =>'0');
+                        cnt_look_through                <= (others =>'0');
+                        cnt_sync_err                    <= (others =>'0');
+                        lookthrough_max_count           <= (others =>'0');
+                        sync_fail_cnt1                  <= (others =>'0');
+                        dwell_cnt                       <= (others =>'0');
+                        cnt_aa                          <= (others =>'0');
+                        cnt_bb                          <= (others =>'0');
+                        debug_sync_cnt1                 <= (others =>'0');
+                        debug_jamm_cnt1                 <= (others =>'0');
+                        debug_look_cnt1                 <= (others =>'0');
+                        init_cntr                       <= (others =>'0');
+                        dwell_trig_cnt                  <= (others =>'0');
+                        lo_en                           <= '0';
+                        freq_occur                      <= '0';
+                        sync_done                       <= '0';
+                        resync_en_trig                  <= '0';
+                        local_jam_en_buf                <= '0';
+                        jamm_eligible_en                <= '0';
+                        pri_cnt_clr                     <= '0';
+                        dwell_en_trig                   <= '0';
+                        sync_en                         <= '0';
+                        init_cnt_trig                   <= '0';
+                        pulse_sync_en                   <= '0';
+                        if(jamm_en = '1') then
+                            c_s                         <= sync;
+                        else
+                            c_s                         <= idle;
+                        end if;
+                        state_cnt                       <= "001";
+                        sync_cnt_buf                    <= sync_cnt;    
+             when sync =>
+                        lo_en                           <= '1';
+                        sync_done                       <= '0';
+                        local_jam_en_buf                <= '0';
+                        jamm_eligible_en                <= '0';
+                        sync_en                         <= '0';
+                        pulse_sync_en                   <= '0';
+                        pri_cnt_clr                     <= '0';
+                        freq_occur                      <= '0';
+                        init_cnt_trig                   <= '0';
+                        cnt_jam                         <= (others =>'0');
+                        cnt_look_through                <= (others =>'0');
+                        cnt_sync_err                    <= (others =>'0');
+                        lookthrough_max_count           <= (others =>'0');
+                        sync_fail_cnt1                  <= sync_fail_cnt1;
+                        cnt_aa                          <= cnt_aa + '1';
+                        cnt_bb                          <= x"0000";
+                        
+                        if(freq_match_pul_f = '1') then 
+                            cnt_sync                    <= cnt_sync + '1';
+                            debug_sync_cnt1             <= debug_sync_cnt1 + '1';
+                         else
+                            cnt_sync                    <= cnt_sync;
+                        end if; 
+                        
+--                        if((init_cntr_buf1 /= init_cntr) and pri_match = '1') then             
+--                            sync_cnt_buf    <= sync_cnt_buf + 2;
+--                        end if;  
+                        if(dwell_en_trig = '1') then
+                            dwell_trig_cnt  <= dwell_trig_cnt + '1';
+                            dwell_en_trig   <= '0';
+                        end if;
+                                                        
+                        if(jammer_lookthrough = '1') then
+                            c_s                         <= blank;
+                        elsif(((cnt_sync > sync_cnt_buf) and lo_en_trig_pul_f = '1' and switch_dwell_en = '0') or(switch_dwell_en = '1' and (dwell_trig_cnt = "10") and lo_en_trig_pul_f = '1')) then
+                            c_s                         <= jamm;
+                            if(switch_dwell_en = '1') then
+                                if(dwell_cnt = swithc_dwell_cnt and pri_match = '1') then
+                                    if(init_cntr  = stagger_level) then
+                                       init_cntr        <= x"01";
+                                       dwell_cnt        <= x"01";
+                                    else   
+                                       init_cntr        <= init_cntr + '1';
+                                       dwell_cnt        <= x"01";
+                                    end if;
+                                elsif(freq_match_pul_f = '1') then
+                                    init_cntr           <= init_cntr;
+                                    dwell_cnt           <= dwell_cnt + '1';
+                                end if;     
+                            elsif(freq_match_pul_f = '1') then
+                                if(init_cntr  = stagger_level) then
+                                   init_cntr            <= x"01";
+                                else   
+                                   init_cntr            <= init_cntr;
+                                end if;
+                            end if;
+                        elsif(cnt_aa     = retrigger_cnt) then 
+                            c_s                         <= retrigger;
+                        else
+                            c_s                         <= sync;
+                            
+                            if(check_match1(1) = '1') then
+                                if(check_pri_cnt_buf  = stagger_level) then
+                                   init_cntr   <= x"01";
+                                else   
+                                   init_cntr   <= check_pri_cnt_buf + '1';
+                                end if;
+--                                init_cntr                   <= check_pri_cnt_buf + '1';
+                            end if;    
+                            
+                            if((init_cntr_buf1 > init_cntr) and check_match1(2) = '1') then     -- this is for dwell and switch to correct the dwell count
+                               clr_flag     <= '1';
+                            elsif(check_match1(2) = '1') then
+                                if(switch_dwell_en = '1') then
+                                    if((init_cntr_buf1 /= init_cntr) and pri_match = '1') then
+                                            dwell_cnt    <= x"02";
+                                            resync_en_trig  <= '1';
+                                            dwell_en_trig   <= '1';
+                                    end if;     
+                                end if; 
+                            elsif(freq_match_pul_r = '1' and switch_dwell_en = '1') then
+                                if(dwell_cnt = swithc_dwell_cnt and switch_dwell_en = '1') then
+                                        dwell_cnt    <= x"01";
+                                else
+                                        dwell_cnt    <= dwell_cnt + '1';   
+                               end if;            
+                            else
+                                clr_flag     <= '0';
+                            end if;
+                            
+                            if(switch_dwell_en = '1') then
+                                if(dwell_cnt = swithc_dwell_cnt and pri_match = '1') then
+                                    if(init_cntr  = stagger_level) then
+                                       init_cntr    <= x"01";
+                                    else   
+                                       init_cntr    <= init_cntr + '1';
+                                    end if;
+                                elsif(freq_match_pul_r = '1') then
+                                    init_cntr    <= init_cntr;
+                                end if; 
+                            elsif(freq_match_pul_r = '1') then
+                                if(init_cntr  = stagger_level) then
+                                   init_cntr   <= x"01";
+                                else   
+                                   init_cntr   <= init_cntr + '1';
+                                end if;
+                            end if;
+                        end if;   
+                        state_cnt                       <= "010";
+                        
+             when retrigger =>
+                        cnt_aa                           <= (others =>'0');
+                        cnt_sync                         <= x"0";
+                        cnt_bb                           <= cnt_bb + '1';
+                        lo_en                            <= '0';
+                        resync_en_trig                   <= '0';
+                        dwell_en_trig                    <= '0';
+                        init_cnt_trig                    <= '0';
+                        dwell_trig_cnt                   <= (others =>'0');
+                        if(cnt_bb = break_cnt)then
+                            c_s                         <= sync;
+                            sync_fail_cnt1              <= sync_fail_cnt1 + '1';
+                        end if;                       
+                        state_cnt                       <= "011";  
+                         
+            when jamm =>
+                        lo_en                           <= '0';
+                        sync_done                       <= '1';
+                        sync_en                         <= '0';
+                        pulse_sync_en                   <= '0';
+                        pri_cnt_clr                     <= '0';
+                        resync_en_trig                  <= '0';
+                        freq_occur                      <= '0';
+                        dwell_en_trig                   <= '0';
+                        cnt_look_through                <= (others =>'0');
+                        cnt_sync_err                    <= (others =>'0');
+                        cnt_sync                        <= (others =>'0');
+                        lookthrough_max_count           <= (others =>'0');
+                        cnt_aa                          <= (others =>'0');
+                        e_pri                           <= (others =>'0');
+                        dwell_trig_cnt                  <= (others =>'0');
+                        sync_fail_cnt1                  <= sync_fail_cnt1;
+                        
+                        if(lo_en_trig_pul_r   = '1') then
+                           cnt_jam                      <= cnt_jam + '1';
+                           debug_jamm_cnt1              <= debug_jamm_cnt1 + '1';
+                        else       
+                            cnt_jam                     <= cnt_jam;
+                        end if;
+                        
+                        if(lo_en_trig_pul_f   = '1' and cnt_jam >= x"000001") then
+                            jamm_eligible_en            <= '1';
+                        end if;
+                                
+                        if(gen_pulse_r = '1') then
+                            if(switch_dwell_en = '1') then
+                                if(dwell_cnt  = swithc_dwell_cnt) then  
+                                    if(init_cntr  = stagger_level) then
+                                        init_cntr   <= x"01";
+                                        dwell_cnt   <= x"01";
+                                        init_cnt_trig   <= '1'; 
+                                     else   
+                                        init_cntr   <= init_cntr + '1';
+                                        dwell_cnt   <= x"01"; 
+                                        init_cnt_trig   <= '1';
+                                     end if;
+                                else
+                                    init_cntr   <= init_cntr;
+                                    dwell_cnt   <= dwell_cnt + '1';
+                                        init_cnt_trig   <= '0';
+                                end if;
+                            else
+                                 if(init_cntr  = stagger_level) then
+                                     init_cntr  <= x"01";
+                                     init_cnt_trig   <= '1';
+                                 else   
+                                     init_cntr  <= init_cntr + '1';
+                                     init_cnt_trig   <= '1';
+                                 end if;             
+                            end if;  
+                        else
+                            init_cnt_trig   <= '0';     
+                        end if;
+                          
+--                        if (range_gate_noise = '1' and away = '1') then 
+--                            if  lo_en_trig_pul_r = '1' then  
+--                                local_jam_en_buf <= '1';
+--                            end if;
+--                        else 
+--                                local_jam_en_buf <= '0';
+--                        end if;
+                        
+                            if  jamm_eligible_en = '1' then  
+                                local_jam_en_buf <= '1';
+                            else 
+                                local_jam_en_buf <= '0';
+                            end if;
+                        
+                        
+                        if(jammer_lookthrough = '1') then
+                            c_s                         <= blank;
+                        elsif(cnt_jam  > jamm_cnt and jammig_trig = '1') then
+                            c_s                         <= lookthrough;
+                        else
+                            c_s                         <= jamm;
+                        end if;
+                        state_cnt                       <= "100";  
+                                                               
+            when lookthrough =>
+                        lo_en                           <= lo_en_trig;
+                        cnt_jam                         <= (others =>'0');
+                        cnt_sync                        <= (others =>'0');
+                        sync_fail_cnt1                  <= (others =>'0');
+                        cnt_aa                          <= (others =>'0');
+                        dwell_trig_cnt                  <= (others =>'0');
+                        local_jam_en_buf                <= '0';
+                        jamm_eligible_en                <= '0';
+                        sync_done                       <= '1';
+                        pri_cnt_clr                     <= '0';
+                        pulse_sync_en                   <= '1';
+                        dwell_en_trig                   <= '0';
+                        lookthrough_max_count           <= lookthrough_max_count + '1';
+                                
+                        if((init_cntr_buf1 > init_cntr) and check_match1(2) = '1') then
+                           clr_flag     <= '1';
+                        else
+                            clr_flag     <= '0';
+                        end if;
+------------------------------------------------------------------------------------------------------------------------------------   
+                        if(ddc_lock_status = '1') then
+                           if(difm_freq_match = '1') then
+                               freq_occur <= '1';
+                           end if;
+                        end if;           
+                    
+                        if(freq_match_pul_f = '1' and pw_match = '1' and ddc_lock_status = '1') then 
+                            cnt_look_through    <= cnt_look_through + '1';
+                            debug_look_cnt1     <= debug_look_cnt1 + '1';
+                        elsif(ddc_lock_status_f = '1') then  
+                            if(freq_occur = '0') then
+                                cnt_sync_err       <= cnt_sync_err + '1'; 
+                                debug_look_cnt1    <= debug_look_cnt1 + '1';
+                            end if;
+                            freq_occur  <= '0';    
+                        end if;
+                        
+---------------------------------------------------------------------------------------                         
+                        if(jammer_lookthrough = '1') then
+                            c_s                  <= blank; 
+                            resync_en_trig       <= '0';
+                        elsif((cnt_look_through > look_through_cnt - 2) and lo_en_trig_pul_f = '1') then        --- make sure the look through cnt is less than the err count.
+                            if(switch_dwell_en = '1') then
+                                if(dwell_cnt > swithc_dwell_cnt) then
+                                    if(init_cntr  = stagger_level) then
+                                       init_cntr    <= x"01";
+                                       dwell_cnt    <= x"01";
+                                    else   
+                                       init_cntr    <= init_cntr + '1';
+                                       dwell_cnt    <= x"01";
+                                    end if;
+                                else
+                                    init_cntr    <= init_cntr;
+                                    dwell_cnt    <= dwell_cnt;
+                                end if;     
+                            else
+                                  init_cntr   <= init_cntr;
+                            end if;
+                            
+                            c_s                 <= jamm; 
+                            resync_en_trig      <= '0';
+                            sync_en             <= '0';
+                            
+                        elsif(cnt_sync_err = sync_err_cnt) then 
+                            if(switch_dwell_en = '1') then
+                                if(dwell_cnt > swithc_dwell_cnt) then
+                                    if(init_cntr  = stagger_level) then
+                                       init_cntr    <= x"01";
+                                       dwell_cnt    <= x"01";
+                                    else   
+                                       init_cntr    <= init_cntr + '1';
+                                       dwell_cnt    <= x"01";
+                                    end if;
+                                else
+                                    init_cntr    <= init_cntr;
+                                    dwell_cnt    <= dwell_cnt;
+                                end if;     
+                            else
+                                  init_cntr   <= init_cntr;  
+                            end if;
+                            c_s                 <= sync; 
+                            resync_en_trig      <= '1';
+                            sync_en             <= '1';
+                            sync_fail_cnt1      <= sync_fail_cnt1 + '1';
+                        elsif(lookthrough_max_count > (pri_max(22 downto 0) & "0000")) then
+                             c_s                 <= sync;
+                            sync_en              <= '1';
+                            sync_fail_cnt1       <= sync_fail_cnt1 + '1'; 
+                            resync_en_trig       <= '1';
+                        else
+                            c_s                 <= lookthrough;   
+                            sync_en             <= '0';  
+                            resync_en_trig      <= '0';
+                            
+                           if(gen_pulse_r = '1') then
+                               if(switch_dwell_en = '1') then
+                                    if(check_match = '1') then
+                                        if(check_pri_cnt_buf  = stagger_level) then
+                                           init_cntr   <= x"01";
+                                        else   
+                                           init_cntr   <= check_pri_cnt_buf + '1';
+                                        end if;
+--                                        init_cntr       <= check_pri_cnt_buf ; --check_pri_cnt;
+                                    elsif(dwell_cnt  = swithc_dwell_cnt) then  
+                                       if(init_cntr  = stagger_level) then
+                                           init_cntr   <= x"01";
+                                           dwell_cnt   <= x"01"; 
+                                        else   
+                                           init_cntr   <= init_cntr + '1';
+                                           dwell_cnt   <= x"01"; 
+                                        end if;
+--                                    elsif(cnt_sync_err > x"0001" and cnt_look_through > x"0001") then           -- this logic will consider the next pri for the RX opening. this will not help now.
+--                                        if(init_cntr  = stagger_level) then
+--                                            init_cntr   <= x"01";
+--                                        else     
+--                                            init_cntr   <= init_cntr + '1'; 
+--                                        end if;    
+                                    else
+                                       init_cntr   <= init_cntr;
+                                       dwell_cnt   <= dwell_cnt + '1';
+                                    end if;
+                               else
+                                    if(check_match = '1') then
+                                        if(check_pri_cnt_buf  = stagger_level) then
+                                           init_cntr   <= x"01";
+                                        else   
+                                           init_cntr   <= check_pri_cnt_buf + '1';
+                                        end if;
+--                                        init_cntr       <= check_pri_cnt;
+                                    elsif(init_cntr  = stagger_level) then
+                                        init_cntr  <= x"01";
+                                    else 
+                                        init_cntr  <= init_cntr + '1';
+                                    end if;             
+                               end if; 
+                           end if;  
+                            
+                        end if; 
+                        state_cnt               <= "101";  
+                        
+            when blank  => 
+                        cnt_sync                        <= (others =>'0');
+                        cnt_jam                         <= (others =>'0');
+                        cnt_look_through                <= (others =>'0');
+                        cnt_sync_err                    <= (others =>'0');
+                        lookthrough_max_count           <= (others =>'0');
+                        sync_fail_cnt1                  <= (others =>'0');
+                        dwell_cnt                       <= (others =>'0');
+                        cnt_aa                          <= (others =>'0');
+                        cnt_bb                          <= (others =>'0');
+                        debug_sync_cnt1                 <= (others =>'0');
+                        debug_jamm_cnt1                 <= (others =>'0');
+                        debug_look_cnt1                 <= (others =>'0');
+                        init_cntr                       <= (others =>'0');
+                        dwell_trig_cnt                  <= (others =>'0');
+                        lo_en                           <= '0';
+                        freq_occur                      <= '0';
+                        sync_done                       <= '0';
+                        resync_en_trig                  <= '0';
+                        local_jam_en_buf                <= '0';
+                        jamm_eligible_en                <= '0';
+                        pri_cnt_clr                     <= '1';
+                        sync_en                         <= '0';
+                        pulse_sync_en                   <= '0';
+                        dwell_en_trig                   <= '0';
+                        
+                        if(jammer_lookthrough = '1') then
+                            c_s                 <= blank;
+                        else    
+                            c_s                 <= sync;
+                            sync_en             <= '1';
+                        end if;
+                        state_cnt               <= "110";                                                                         
+    end case;                                 
+end if;
+end if;
+end process;         
+
+process(clk)
+begin
+if(rising_EdgE(clk)) then
+    if(sync_fail_cnt1 > x"0a") then 
+       Jamming_fail    <= '1';
+    else
+       Jamming_fail    <= '0';
+    end if;
+end if;
+end process;
+
+state_cnt_o <= state_cnt;
+debug_sync_cnt  <= debug_sync_cnt1;
+debug_jamm_cnt  <= debug_jamm_cnt1;
+debug_look_cnt  <= debug_look_cnt1; 
+sync_fail_cnt   <= x"000000" & sync_fail_cnt1;
+      
+end Behavioral;
+
+--process(clk)      -- for fixed PRI
+--begin
+--if(rising_edge(clk)) then
+--if(((calc_pw <= pw1+pw_offset) and  (calc_pw > pw1 - pw_offset)) and sync_en = '0' ) then   -- offset of 200 ns.
+--    pw_match <= '1';
+--else
+--    pw_match <= '0';    
+--end if;
+
+----if((calc_pri <= pri1+pri_offset) and  (calc_pri > pri1 - pri_offset)) then
+----    pri_match <= '1';
+----else
+----    pri_match <= '0';    
+----end if;
+--end if;
+--end process;

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedding Invitation</title>
+    <style>
+        :root {
+            --maroon: #800000;
+            --gold: #d4af37;
+            --cream: #fff9f0;
+            --love-red: #e91e63;
+        }
+
+        * { box-sizing: border-box; }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Georgia', serif;
+            background-color: var(--cream);
+            overflow: hidden;
+        }
+
+        /* --- PAGE 1: FULL SCREEN COVER --- */
+        #cover-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--maroon);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            transition: transform 0.8s ease-in-out;
+            background-image: radial-gradient(var(--gold) 0.5px, transparent 0.5px);
+            background-size: 30px 30px;
+        }
+
+        .vanish { transform: translateY(-100%); }
+
+        /* --- PAGE STRUCTURE --- */
+        .page {
+            position: absolute;
+            width: 100%;
+            height: 100vh;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            border: 15px solid var(--maroon);
+            outline: 5px solid var(--gold);
+            outline-offset: -12px;
+        }
+
+        .active-page { display: flex !important; }
+
+        /* --- BUTTONS --- */
+        .btn-gold {
+            padding: 12px 35px;
+            font-size: 1.2rem;
+            background: var(--gold);
+            color: white;
+            border: 2px solid white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-back {
+            margin-top: 25px;
+            background: transparent;
+            color: var(--maroon);
+            border: 1px solid var(--maroon);
+            padding: 8px 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        /* --- NAMES PAGE --- */
+        .dolls-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 10px;
+        }
+
+        .doll-box {
+            width: 110px;
+            height: 140px;
+            background: white;
+            border: 2px solid var(--gold);
+            border-radius: 55px 55px 15px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 70px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .name-text {
+            font-size: 2.8rem;
+            color: var(--maroon);
+            font-weight: bold;
+            margin: 5px 0;
+            text-shadow: 1px 1px 0 var(--gold);
+        }
+
+        .symbol-heart {
+            font-size: 50px;
+            margin: 10px 0;
+            color: var(--love-red);
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            animation: heartbeat 1.5s infinite;
+        }
+
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* --- DATES PAGE --- */
+        .info-box {
+            background: #fff;
+            border: 1px solid var(--gold);
+            padding: 15px;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 350px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .day-text { color: #b30000; font-weight: bold; font-size: 1.1rem; }
+
+        .btn-location {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 15px 30px;
+            background: #1b5e20;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 4px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="cover-page">
+        <div style="text-align: center; border: 4px double var(--gold); padding: 50px; background: var(--maroon);">
+            <h1 style="color: var(--gold); margin-bottom: 30px;">Welcome</h1>
+            <button class="btn-gold" onclick="openToNames()">Invitation</button>
+        </div>
+    </div>
+
+    <div id="names-page" class="page">
+        <div class="dolls-container">
+            <div class="doll-box">🤵</div>
+            <div class="doll-box">👰</div>
+        </div>
+        
+        <div class="name-text">Mukesh</div>
+        <div class="symbol-heart">❤️</div>
+        <div class="name-text">Charishma</div>
+        
+        <p style="font-style: italic; color: #555; margin-top: 15px; font-size: 1.2rem;">Are getting married!</p>
+        
+        <button class="btn-gold" onclick="goToDates()">View Program Details</button>
+        
+        <button class="btn-back" onclick="backToCover()">← Back to Cover</button>
+    </div>
+
+    <div id="dates-page" class="page">
+        <h2 style="color: var(--maroon); text-decoration: underline; margin-bottom: 10px;">Save The Date</h2>
+        
+        <div class="info-box">
+            <h3 style="margin: 0; color: var(--maroon); text-transform: uppercase;">Reception</h3>
+            <div class="day-text">Saturday</div>
+            <strong>02 May 2026</strong><br>
+            Time: 7:00 PM Onwards
+        </div>
+
+        <div class="info-box">
+            <h3 style="margin: 0; color: var(--maroon); text-transform: uppercase;">Muhurtham</h3>
+            <div class="day-text">Sunday</div>
+            <strong>03 May 2026</strong><br>
+            Time: 6:30 AM to 7:30 AM
+        </div>
+
+        <a href="https://maps.app.goo.gl/KZeGqvbEyWMJjHM27" class="btn-location">
+            📍 VIEW ON GOOGLE MAPS
+        </a>
+
+        <button class="btn-back" onclick="backToNames()">← Back to Names</button>
+    </div>
+
+    <script>
+        function openToNames() {
+            document.getElementById('cover-page').classList.add('vanish');
+            document.getElementById('names-page').classList.add('active-page');
+            document.getElementById('dates-page').classList.remove('active-page');
+        }
+
+        function goToDates() {
+            document.getElementById('names-page').classList.remove('active-page');
+            document.getElementById('dates-page').classList.add('active-page');
+        }
+
+        function backToNames() {
+            document.getElementById('dates-page').classList.remove('active-page');
+            document.getElementById('names-page').classList.add('active-page');
+        }
+
+        function backToCover() {
+            document.getElementById('names-page').classList.remove('active-page');
+            document.getElementById('cover-page').classList.remove('vanish');
+        }
+    </script>
+
+</body>
+</html>
